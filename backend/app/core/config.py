@@ -3,30 +3,31 @@ Configuration settings for CiteSight API
 """
 
 import os
+from typing import Any
 
+from pydantic import field_validator, Field
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     # App settings
-    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
+    DEBUG: bool = False
     API_V1_STR: str = "/api"
     PROJECT_NAME: str = "CiteSight"
 
-    # CORS settings
-    ALLOWED_ORIGINS: list[str] = [
-        "http://localhost:3000",  # React dev server
-        "http://localhost:80",    # Production frontend
-        "http://0.0.0.0:3000",
-    ]
+    # CORS settings - can be set as comma-separated string in .env
+    ALLOWED_ORIGINS: str | list[str] = Field(
+        default="http://localhost:5173,http://localhost:3000",
+        description="Comma-separated list of allowed origins"
+    )
 
     # File processing settings
-    MAX_FILE_SIZE: int = int(os.getenv("MAX_FILE_SIZE", "10485760"))  # 10MB default
-    PROCESS_TIMEOUT: int = int(os.getenv("PROCESS_TIMEOUT", "120"))   # 2 minutes
-    MAX_FILES_PER_REQUEST: int = int(os.getenv("MAX_FILES_PER_REQUEST", "5"))
+    MAX_FILE_SIZE: int = 10485760  # 10MB default
+    PROCESS_TIMEOUT: int = 120   # 2 minutes
+    MAX_FILES_PER_REQUEST: int = 5
 
     # Rate limiting
-    RATE_LIMIT: str = os.getenv("RATE_LIMIT", "10/hour")
+    RATE_LIMIT: str = "10/hour"
 
     # Analysis settings
     DEFAULT_CITATION_STYLE: str = "auto"
@@ -44,12 +45,26 @@ class Settings(BaseSettings):
     WAYBACK_API_BASE: str = "https://archive.org/wayback"
 
     # Security settings
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "change-this-in-production")
+    SECRET_KEY: str = "change-this-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    @field_validator('ALLOWED_ORIGINS')
+    @classmethod
+    def parse_cors(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',')]
+        elif isinstance(v, list):
+            return v
+        return []
 
     class Config:
         case_sensitive = True
         env_file = ".env"
 
+# Create settings instance
 settings = Settings()
+
+# Ensure ALLOWED_ORIGINS is always a list
+if isinstance(settings.ALLOWED_ORIGINS, str):
+    settings.ALLOWED_ORIGINS = [origin.strip() for origin in settings.ALLOWED_ORIGINS.split(',')]

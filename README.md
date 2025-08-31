@@ -133,7 +133,15 @@ const response = await axios.post('http://localhost:8000/api/analyze', formData)
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚖️ Legal & Acknowledgements
+
+See [LEGAL.md](LEGAL.md) for:
+- Full license text
+- Open source acknowledgements
+- Third-party service terms
+- Privacy and compliance information
 
 ## 🙏 Acknowledgments
 

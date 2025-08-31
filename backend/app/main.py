@@ -1,6 +1,6 @@
 """
-CiteSight FastAPI Backend
-Academic Document Analyzer API
+DocumentLens FastAPI Service
+Multi-Modal Document Analysis Microservice
 """
 
 from fastapi import FastAPI
@@ -9,7 +9,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api.routes import analysis, health
+from app.api.routes import analysis, health, text_analysis, academic_analysis, future_endpoints
 from app.core.config import settings
 
 # Create rate limiter
@@ -17,8 +17,8 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Create FastAPI app
 app = FastAPI(
-    title="CiteSight API",
-    description="Academic Document Analyzer API",
+    title="DocumentLens API",
+    description="Multi-Modal Document Analysis Microservice - Transform any content into actionable insights",
     version="1.0.0",
     docs_url="/api/docs" if settings.DEBUG else None,
     redoc_url="/api/redoc" if settings.DEBUG else None
@@ -41,13 +41,23 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 
+# New modular endpoints
+app.include_router(text_analysis.router, prefix="/api/analyze", tags=["text-analysis"])
+app.include_router(academic_analysis.router, prefix="/api/analyze", tags=["academic-analysis"])
+app.include_router(future_endpoints.router, prefix="/api/analyze", tags=["future-features"])
+
 @app.get("/")
 async def root() -> dict[str, str]:
     """Root endpoint"""
     return {
-        "message": "CiteSight API",
+        "service": "DocumentLens",
+        "description": "Multi-Modal Document Analysis Microservice",
         "version": "1.0.0",
-        "status": "running"
+        "status": "running",
+        "endpoints": {
+            "current": ["/api/health", "/api/analyze"],
+            "planned": ["/api/analyze/text", "/api/analyze/academic", "/api/analyze/files"]
+        }
     }
 
 if __name__ == "__main__":

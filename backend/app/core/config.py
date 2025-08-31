@@ -1,5 +1,5 @@
 """
-Configuration settings for CiteSight API
+Configuration settings for DocumentLens API
 """
 
 import os
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     # App settings
     DEBUG: bool = False
     API_V1_STR: str = "/api"
-    PROJECT_NAME: str = "CiteSight"
+    PROJECT_NAME: str = "DocumentLens"
 
     # CORS settings - can be set as comma-separated string in .env
     ALLOWED_ORIGINS: str | list[str] = Field(

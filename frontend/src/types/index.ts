@@ -1,5 +1,15 @@
 // Core TypeScript interfaces for CiteSight application
 
+export interface ProcessingOptions {
+  citationStyle: 'auto' | 'apa' | 'mla' | 'chicago';
+  checkUrls: boolean;
+  checkDoi: boolean;
+  checkWayback: boolean;
+  checkPlagiarism: boolean;
+  checkInText: boolean;
+  processingMode: 'server' | 'local';
+}
+
 export interface AnalysisOptions {
   citationStyle: 'auto' | 'apa' | 'mla' | 'chicago';
   checkUrls: boolean;
@@ -11,20 +21,23 @@ export interface AnalysisOptions {
 }
 
 export interface Pattern {
-  text: string;
+  type: string;
+  description: string;
   severity: 'high' | 'medium' | 'low';
+  location?: string;
 }
 
 export interface Issue {
-  type: 'error' | 'warning';
-  title: string;
-  details: string;
+  type: string;
+  message: string;
+  severity?: 'high' | 'medium' | 'low';
+  suggestion?: string;
 }
 
 export interface WordFrequency {
   word: string;
   count: number;
-  size: number;
+  size?: number;
 }
 
 export interface PhraseCount {
@@ -41,9 +54,8 @@ export interface DocumentComparison {
 }
 
 export interface SuspiciousPatterns {
-  selfPlagiarism: Pattern[];
-  citationAnomalies: Pattern[];
-  styleInconsistencies: Pattern[];
+  patterns: Pattern[];
+  risk_score: number;
 }
 
 export interface ReferenceResults {
@@ -53,6 +65,10 @@ export interface ReferenceResults {
   missingInText: number;
   orphanedInText: number;
   issues: Issue[];
+  // Snake case aliases for backend compatibility
+  broken_urls: number;
+  unresolved_dois: number;
+  missing_in_text: number;
 }
 
 export interface DocumentAnalysis {
@@ -62,20 +78,33 @@ export interface DocumentAnalysis {
   paragraphCount: number;
   fleschScore: number;
   fleschKincaidGrade: number;
+  // Snake case aliases for backend compatibility
+  word_count: number;
+  sentence_count: number;
+  avg_words_per_sentence: number;
+  paragraph_count: number;
+  flesch_score: number;
+  flesch_kincaid_grade: number;
 }
 
 export interface WritingQuality {
-  passiveVoicePercentage: number;
-  sentenceVariety: number;
-  transitionWords: number;
-  hedgingLanguage: number;
-  academicTone: number;
+  passive_voice_percentage: number;
+  sentence_variety_score: number;
+  transition_words: number;
+  hedging_phrases: number;
+  academic_tone_score: number;
+  complex_sentences: number;
 }
 
 export interface WordAnalysis {
-  mostFrequent: WordFrequency[];
-  uniqueWords: string[];
-  uniquePhrases: PhraseCount[];
+  unique_words: number;
+  vocabulary_richness: number;
+  top_words: WordFrequency[];
+  bigrams: PhraseCount[];
+  trigrams: PhraseCount[];
+  uniqueWords?: number;
+  vocabularyRichness?: number;
+  topWords?: WordFrequency[];
 }
 
 export interface AnalysisResults {
@@ -85,6 +114,13 @@ export interface AnalysisResults {
   writingQuality: WritingQuality;
   wordAnalysis: WordAnalysis;
   comparison?: DocumentComparison[];
+  processing_time: number;
+  file_count: number;
+  // Snake case aliases for backend compatibility
+  suspicious_patterns: SuspiciousPatterns;
+  document_analysis: DocumentAnalysis;
+  writing_quality: WritingQuality;
+  word_analysis: WordAnalysis;
 }
 
 export interface FileUpload {

@@ -2,12 +2,13 @@
 URL verification service
 """
 
-from typing import List, Dict, Any
+from typing import Any
+
 
 class URLVerifier:
     """Verifies URLs in references"""
-    
-    async def verify_urls(self, urls: List[str]) -> Dict[str, Any]:
+
+    async def verify_urls(self, urls: list[str]) -> dict[str, Any]:
         """Verify a list of URLs (placeholder implementation)"""
         # TODO: Implement actual URL verification
         return {

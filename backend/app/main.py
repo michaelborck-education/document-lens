@@ -3,11 +3,11 @@ CiteSight FastAPI Backend
 Academic Document Analyzer API
 """
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.api.routes import analysis, health
 from app.core.config import settings
@@ -26,7 +26,7 @@ app = FastAPI(
 
 # Add rate limiting
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
 # CORS middleware
 app.add_middleware(
@@ -42,7 +42,7 @@ app.include_router(health.router, prefix="/api", tags=["health"])
 app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     """Root endpoint"""
     return {
         "message": "CiteSight API",

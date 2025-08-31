@@ -3,7 +3,9 @@ Health check endpoints
 """
 
 import time
+
 from fastapi import APIRouter
+
 from app.models.schemas import HealthResponse
 
 router = APIRouter()
@@ -12,10 +14,10 @@ router = APIRouter()
 START_TIME = time.time()
 
 @router.get("/health", response_model=HealthResponse)
-async def health_check():
+async def health_check() -> HealthResponse:
     """Health check endpoint"""
     uptime = time.time() - START_TIME
-    
+
     return HealthResponse(
         status="healthy",
         version="1.0.0",

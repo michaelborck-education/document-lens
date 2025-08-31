@@ -4,9 +4,10 @@ Writing quality analysis
 
 from app.models.schemas import WritingQuality
 
+
 class WritingQualityAnalyzer:
     """Analyzes writing quality metrics"""
-    
+
     def analyze(self, text: str) -> WritingQuality:
         """Analyze writing quality (placeholder implementation)"""
         # TODO: Implement actual writing quality analysis

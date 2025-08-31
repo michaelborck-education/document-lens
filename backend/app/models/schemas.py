@@ -2,8 +2,10 @@
 Pydantic schemas for CiteSight API
 """
 
-from typing import List, Optional, Literal
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
 
 # Request models
 class AnalysisOptions(BaseModel):
@@ -42,9 +44,9 @@ class DocumentComparison(BaseModel):
     issues: int
 
 class SuspiciousPatterns(BaseModel):
-    self_plagiarism: List[Pattern] = Field(default_factory=list)
-    citation_anomalies: List[Pattern] = Field(default_factory=list)
-    style_inconsistencies: List[Pattern] = Field(default_factory=list)
+    self_plagiarism: list[Pattern] = Field(default_factory=list)
+    citation_anomalies: list[Pattern] = Field(default_factory=list)
+    style_inconsistencies: list[Pattern] = Field(default_factory=list)
 
 class ReferenceResults(BaseModel):
     total: int
@@ -52,7 +54,7 @@ class ReferenceResults(BaseModel):
     unresolved_dois: int
     missing_in_text: int
     orphaned_in_text: int
-    issues: List[Issue] = Field(default_factory=list)
+    issues: list[Issue] = Field(default_factory=list)
 
 class DocumentAnalysis(BaseModel):
     word_count: int
@@ -70,9 +72,9 @@ class WritingQuality(BaseModel):
     academic_tone: float
 
 class WordAnalysis(BaseModel):
-    most_frequent: List[WordFrequency] = Field(default_factory=list)
-    unique_words: List[str] = Field(default_factory=list)
-    unique_phrases: List[PhraseCount] = Field(default_factory=list)
+    most_frequent: list[WordFrequency] = Field(default_factory=list)
+    unique_words: list[str] = Field(default_factory=list)
+    unique_phrases: list[PhraseCount] = Field(default_factory=list)
 
 class AnalysisResults(BaseModel):
     references: ReferenceResults
@@ -80,22 +82,22 @@ class AnalysisResults(BaseModel):
     document_analysis: DocumentAnalysis
     writing_quality: WritingQuality
     word_analysis: WordAnalysis
-    comparison: Optional[List[DocumentComparison]] = None
+    comparison: list[DocumentComparison] | None = None
     processing_time: float
     file_count: int
 
 # Response models
 class ApiResponse(BaseModel):
     status: Literal["success", "error"]
-    message: Optional[str] = None
-    data: Optional[dict] = None
+    message: str | None = None
+    data: dict | None = None
 
 class HealthResponse(BaseModel):
     status: str
     version: str
     uptime: float
-    
+
 class ErrorResponse(BaseModel):
     error: str
-    details: Optional[str] = None
-    code: Optional[int] = None
+    details: str | None = None
+    code: int | None = None

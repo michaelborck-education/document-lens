@@ -2,13 +2,14 @@
 Suspicious pattern detection
 """
 
-from typing import List
-from app.models.schemas import SuspiciousPatterns, Pattern
+
+from app.models.schemas import SuspiciousPatterns
+
 
 class SuspiciousPatternDetector:
     """Detects suspicious patterns in academic text"""
-    
-    def detect_patterns(self, text: str, references: List, documents: List[str] = None) -> SuspiciousPatterns:
+
+    def detect_patterns(self, text: str, references: list, documents: list[str] | None = None) -> SuspiciousPatterns:
         """Detect suspicious patterns (placeholder implementation)"""
         # TODO: Implement actual pattern detection
         return SuspiciousPatterns(

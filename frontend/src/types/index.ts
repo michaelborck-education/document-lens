@@ -144,7 +144,7 @@ export interface AnalysisResponse extends AnalysisResults {
 export interface ApiError {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export interface ValidationError {

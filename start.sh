@@ -1,45 +1,43 @@
 #!/bin/bash
 
-# CiteSight Full Stack Startup Script
+# DocumentLens Microservice Startup Script
 
-echo "🚀 Starting CiteSight Application..."
-echo "===================================="
+echo "🚀 Starting DocumentLens Microservice..."
 
-# Function to cleanup on exit
-cleanup() {
-    echo ""
-    echo "🛑 Shutting down CiteSight..."
-    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null
-    exit
-}
+# Check if virtual environment exists
+if [ ! -d ".venv" ]; then
+    echo "📦 Creating virtual environment..."
+    python3 -m venv .venv
+fi
 
-# Set trap to cleanup on Ctrl+C
-trap cleanup INT
+# Activate virtual environment
+echo "🔧 Activating virtual environment..."
+source .venv/bin/activate
 
-# Start backend in background
-echo "📦 Starting backend server..."
-./start-backend.sh &
-BACKEND_PID=$!
+# Check if dependencies are installed
+if ! python -c "import fastapi" 2>/dev/null; then
+    echo "📥 Installing dependencies..."
+    pip install --upgrade pip
+    pip install -r requirements.txt
+fi
 
-# Wait a bit for backend to start
-sleep 3
+# Create .env file if it doesn't exist
+if [ ! -f ".env" ]; then
+    echo "📝 Creating .env file..."
+    cat > .env << 'EOL'
+DEBUG=true
+MAX_FILE_SIZE=10485760
+MAX_FILES_PER_REQUEST=5
+RATE_LIMIT=10/minute
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+SECRET_KEY=development-secret-key-change-in-production
+EOL
+fi
 
-# Start frontend in background
-echo ""
-echo "📦 Starting frontend server..."
-./start-frontend.sh &
-FRONTEND_PID=$!
+# Start the backend server
+echo "✅ Starting DocumentLens server on http://localhost:8000"
+echo "📚 API Documentation available at http://localhost:8000/api/docs"
+echo "Press Ctrl+C to stop the server"
+echo "----------------------------------------"
 
-echo ""
-echo "===================================="
-echo "✅ CiteSight is starting up!"
-echo ""
-echo "🔧 Backend API: http://localhost:8000"
-echo "📚 API Docs: http://localhost:8000/api/docs"
-echo "🌐 Frontend: http://localhost:5173"
-echo ""
-echo "Press Ctrl+C to stop all servers"
-echo "===================================="
-
-# Wait for both processes
-wait $BACKEND_PID $FRONTEND_PID
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

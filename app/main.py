@@ -11,7 +11,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api.routes import academic_analysis, analysis, future_endpoints, health, text_analysis
+from app.api.routes import academic_analysis, future_endpoints, health, text_analysis
 from app.core.config import settings
 
 # Create rate limiter
@@ -41,7 +41,6 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router, prefix="/api", tags=["health"])
-app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 
 # New modular endpoints
 app.include_router(text_analysis.router, prefix="/api/analyze", tags=["text-analysis"])
@@ -57,12 +56,16 @@ async def root() -> dict[str, Any]:
         "version": "1.0.0",
         "status": "running",
         "endpoints": {
-            "current": ["/api/health", "/api/analyze", "/api/analyze/text", "/api/analyze/academic", "/api/analyze/files"],
             "available": {
+                "health": "/api/health",
                 "text_analysis": "/api/analyze/text",
                 "academic_analysis": "/api/analyze/academic",
-                "file_processing": "/api/analyze/files",
-                "legacy_upload": "/api/analyze"
+                "file_processing": "/api/analyze/files"
+            },
+            "description": {
+                "text_analysis": "Analyze raw text (JSON input)",
+                "academic_analysis": "Academic analysis of raw text (JSON input)",
+                "file_processing": "Upload and analyze files (form data)"
             }
         }
     }

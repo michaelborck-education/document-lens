@@ -314,7 +314,7 @@ class DocumentProcessor:
                 pptx_file = io.BytesIO(content)
                 prs = Presentation(pptx_file)
 
-                metadata["slides"] = int(len(prs.slides))
+                metadata["slides"] = len(prs.slides)
 
                 # Core properties
                 if hasattr(prs, 'core_properties'):

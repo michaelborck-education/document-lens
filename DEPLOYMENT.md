@@ -49,8 +49,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # 5. Install dependencies
-pip install -r requirements.txt
-# OR with uv: uv sync
+uv sync
 
 # 6. Configure environment
 cp .env.example .env  # Edit with your settings
@@ -262,7 +261,7 @@ sudo journalctl -u documentlens -f
 cd document-lens
 git pull
 source .venv/bin/activate
-pip install -r requirements.txt  # or: uv sync
+uv sync
 sudo systemctl restart documentlens
 
 # Docker deployment

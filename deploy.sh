@@ -70,8 +70,7 @@ else
     source .venv/bin/activate
     
     echo "📥 Installing dependencies..."
-    pip install --upgrade pip
-    pip install -r requirements.txt
+    uv sync
 fi
 
 # Create production .env file if it doesn't exist

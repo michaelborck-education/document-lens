@@ -7,26 +7,28 @@ Transform text content into actionable insights through comprehensive linguistic
 ## 🚀 Quick Start
 
 ```bash
-# Setup
-./start.sh
+# Raw deployment
+./deploy.sh
+
+# Or Docker deployment
+docker-compose up -d
 
 # API available at: http://localhost:8000
-# Documentation: http://localhost:8000/api/docs
+# Documentation: http://localhost:8000/docs (if DEBUG=true)
 ```
 
 ## 📊 API Endpoints
 
-### Core Text Analysis
-- `GET /api/health` - Service health check
-- `POST /api/analyze` - Full text analysis (comprehensive)
-- `POST /api/analyze/text` - Core text analysis only
-- `POST /api/analyze/academic` - Academic features only
+### Core Analysis (Clean Australian URLs)
+- `GET /health` - Service health check
+- `POST /text` - Text analysis (readability, quality, word frequency)
+- `POST /academic` - Academic analysis (citations, DOI resolution, integrity)
+- `POST /files` - File upload + analysis (PDF, DOCX, TXT, MD)
 
-### Document Processing
-- `POST /api/analyze/files` - File upload + text analysis
-  - Supports: PDF, DOCX, TXT, Markdown
-  - For presentations: Use [PresentationLens](https://github.com/michael-borck/presentation-lens)
-  - For recordings: Use [RecordingLens](https://github.com/michael-borck/recording-lens)
+### Integration
+- Root endpoint: `GET /` - Service info and available endpoints
+- For presentations: Use [PresentationLens](https://github.com/michael-borck/presentation-lens)
+- For recordings: Use [RecordingLens](https://github.com/michael-borck/recording-lens)
 
 ## 🎯 Use Cases
 
@@ -64,11 +66,30 @@ graph LR
     B --> I[Student Dashboard]
 ```
 
+## 🚀 Deployment
+
+Two deployment options available:
+
+### Raw/Native Deployment
+```bash
+git clone https://github.com/michael-borck/document-lens.git
+cd document-lens
+./deploy.sh  # Handles venv, dependencies, and production server
+```
+
+### Docker Deployment
+```bash
+git clone https://github.com/michael-borck/document-lens.git
+cd document-lens
+docker-compose up -d  # Simple deployment
+# Or: docker-compose --profile production up -d  # With Nginx
+```
+
 ## 📚 Documentation
 
-- `DOCUMENTLENS_SETUP.md` - Complete setup and usage instructions
-- `docs/architecture/` - Microservices architecture documentation
-- `docs/future-services/` - Service specifications and integration patterns
+- `DEPLOYMENT.md` - Complete VPS deployment guide (raw + Docker)
+- `DOCUMENTLENS_SETUP.md` - Setup and usage instructions
+- `.env.example` - Configuration template
 
 ---
 

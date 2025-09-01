@@ -43,9 +43,9 @@ source .venv/bin/activate
 
 4. **Install dependencies:**
 ```bash
-pip install -r requirements.txt
-# Or if you want development dependencies:
-pip install -e ".[dev]"
+uv sync
+# Or for development with dev dependencies:
+uv sync --group dev
 ```
 
 5. **Start the backend server:**

@@ -17,8 +17,7 @@ source .venv/bin/activate
 # Check if dependencies are installed
 if ! python -c "import fastapi" 2>/dev/null; then
     echo "📥 Installing dependencies..."
-    pip install --upgrade pip
-    pip install -r requirements.txt
+    uv sync
 fi
 
 # Create .env file if it doesn't exist

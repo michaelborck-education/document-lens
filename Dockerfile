@@ -11,14 +11,10 @@ RUN pip install uv
 WORKDIR /app
 
 # Copy dependency files first (for Docker layer caching)
-COPY pyproject.toml uv.lock* requirements.txt ./
+COPY pyproject.toml uv.lock* ./
 
-# Create virtual environment and install dependencies
-RUN uv venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
-
-# Install dependencies
-RUN uv pip install -r requirements.txt
+# Install dependencies using uv
+RUN uv sync --frozen
 
 # Stage 2: Runtime stage
 FROM python:3.11-slim AS runtime

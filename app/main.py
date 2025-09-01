@@ -46,7 +46,7 @@ app.include_router(analysis.router, prefix="/api", tags=["analysis"])
 # New modular endpoints
 app.include_router(text_analysis.router, prefix="/api/analyze", tags=["text-analysis"])
 app.include_router(academic_analysis.router, prefix="/api/analyze", tags=["academic-analysis"])
-app.include_router(future_endpoints.router, prefix="/api/analyze", tags=["future-features"])
+app.include_router(future_endpoints.router, prefix="/api/analyze", tags=["file-processing"])
 
 @app.get("/")
 async def root() -> dict[str, Any]:
@@ -57,8 +57,13 @@ async def root() -> dict[str, Any]:
         "version": "1.0.0",
         "status": "running",
         "endpoints": {
-            "current": ["/api/health", "/api/analyze"],
-            "planned": ["/api/analyze/text", "/api/analyze/academic", "/api/analyze/files"]
+            "current": ["/api/health", "/api/analyze", "/api/analyze/text", "/api/analyze/academic", "/api/analyze/files"],
+            "available": {
+                "text_analysis": "/api/analyze/text",
+                "academic_analysis": "/api/analyze/academic",
+                "file_processing": "/api/analyze/files",
+                "legacy_upload": "/api/analyze"
+            }
         }
     }
 

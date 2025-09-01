@@ -20,10 +20,10 @@ limiter = Limiter(key_func=get_remote_address)
 # Create FastAPI app
 app = FastAPI(
     title="DocumentLens API",
-    description="Multi-Modal Document Analysis Microservice - Transform any content into actionable insights",
+    description="Australian Document Analysis Microservice - Transform any content into actionable insights",
     version="1.0.0",
-    docs_url="/api/docs" if settings.DEBUG else None,
-    redoc_url="/api/redoc" if settings.DEBUG else None
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None
 )
 
 # Add rate limiting
@@ -39,13 +39,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(health.router, prefix="/api", tags=["health"])
-
-# New modular endpoints
-app.include_router(text_analysis.router, prefix="/api/analyze", tags=["text-analysis"])
-app.include_router(academic_analysis.router, prefix="/api/analyze", tags=["academic-analysis"])
-app.include_router(future_endpoints.router, prefix="/api/analyze", tags=["file-processing"])
+# Include routers - Clean Australian microservice URLs
+app.include_router(health.router, tags=["health"])
+app.include_router(text_analysis.router, tags=["text-analysis"])
+app.include_router(academic_analysis.router, tags=["academic-analysis"])
+app.include_router(future_endpoints.router, tags=["file-processing"])
 
 @app.get("/")
 async def root() -> dict[str, Any]:
@@ -57,15 +55,15 @@ async def root() -> dict[str, Any]:
         "status": "running",
         "endpoints": {
             "available": {
-                "health": "/api/health",
-                "text_analysis": "/api/analyze/text",
-                "academic_analysis": "/api/analyze/academic",
-                "file_processing": "/api/analyze/files"
+                "health": "/health",
+                "text_analysis": "/text",
+                "academic_analysis": "/academic",
+                "file_processing": "/files"
             },
             "description": {
-                "text_analysis": "Analyze raw text (JSON input)",
+                "text_analysis": "Analyse raw text (JSON input)",
                 "academic_analysis": "Academic analysis of raw text (JSON input)",
-                "file_processing": "Upload and analyze files (form data)"
+                "file_processing": "Upload and analyse files (form data)"
             }
         }
     }

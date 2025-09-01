@@ -35,7 +35,7 @@ class TextAnalysisResponse(BaseModel):
 
 @router.post("/text", response_model=TextAnalysisResponse)
 @limiter.limit(settings.RATE_LIMIT)
-async def analyze_text_only(
+async def analyse_text_only(
     request: Request,
     analysis_request: TextAnalysisRequest
 ) -> TextAnalysisResponse:

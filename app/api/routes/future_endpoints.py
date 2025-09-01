@@ -61,9 +61,9 @@ class FileAnalysisResponse(BaseModel):
 
 @router.post("/files", response_model=FileAnalysisResponse)
 @limiter.limit(settings.RATE_LIMIT)
-async def analyze_uploaded_files(
+async def analyse_uploaded_files(
     request: Request,
-    files: list[UploadFile] = File(..., description="Documents to analyze (PDF, DOCX, TXT, MD)"),
+    files: list[UploadFile] = File(..., description="Documents to analyse (PDF, DOCX, TXT, MD)"),
     analysis_type: str = Form(default="full", description="Analysis type: full, text, or academic"),
     citation_style: str = Form(default="auto", description="Citation style: auto, apa, mla, chicago"),
     check_urls: bool = Form(default=True, description="Verify URLs in documents"),
@@ -160,7 +160,7 @@ async def analyze_uploaded_files(
                 all_metadata.append(file_metadata)
 
             # Analyze based on analysis type
-            file_analysis = await _analyze_file_content(
+            file_analysis = await _analyse_file_content(
                 text, analysis_type, citation_style, check_urls, check_doi
             )
 
@@ -211,7 +211,7 @@ async def analyze_uploaded_files(
             detail=f"File analysis failed: {e!s}"
         ) from e
 
-async def _analyze_file_content(
+async def _analyse_file_content(
     text: str,
     analysis_type: str,
     citation_style: str,

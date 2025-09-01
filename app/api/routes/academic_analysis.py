@@ -44,7 +44,7 @@ class AcademicAnalysisResponse(BaseModel):
 
 @router.post("/academic", response_model=AcademicAnalysisResponse)
 @limiter.limit(settings.RATE_LIMIT)
-async def analyze_academic_features(
+async def analyse_academic_features(
     request: Request,
     analysis_request: AcademicAnalysisRequest
 ) -> AcademicAnalysisResponse:

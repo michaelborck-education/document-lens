@@ -22,3 +22,6 @@ httpx==0.26.0
 # Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+
+# Production server (optional - for better performance)
+gunicorn==21.2.0

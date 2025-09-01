@@ -143,22 +143,231 @@ async def analyze_academic_features(
 
 async def _analyze_references(references: list, text: str, options: AnalysisOptions) -> ReferenceResults:
     """Analyze references for broken URLs, unresolved DOIs, etc."""
-    # This will be implemented with the actual services
-    # For now, return a placeholder with some basic analysis
+    from app.models.schemas import Issue
+
+    broken_urls = 0
+    unresolved_dois = 0
+    missing_in_text = 0
+    orphaned_in_text = 0
+    issues = []
+
+    if not references:
+        return ReferenceResults(
+            total=0,
+            broken_urls=0,
+            unresolved_dois=0,
+            missing_in_text=0,
+            orphaned_in_text=0,
+            issues=[]
+        )
+
+    # Extract URLs and DOIs from references
+    urls = []
+    dois = []
+
+    for ref in references:
+        ref_text = str(ref) if ref else ""
+
+        # Extract URLs
+        import re
+        url_pattern = r'https?://[^\s<>"{}|\\^`[\]]+'
+        found_urls = re.findall(url_pattern, ref_text)
+        urls.extend(found_urls)
+
+        # Extract DOIs
+        doi_pattern = r'(?:doi:|DOI:|\bdoi\s*[:=]\s*|https?://(?:dx\.)?doi\.org/)?\s*(10\.\d{4,}/[-._;()/:\w\[\]]+)'
+        found_dois = re.findall(doi_pattern, ref_text, re.IGNORECASE)
+        dois.extend(found_dois)
+
+    # Verify URLs if requested
+    if options.check_urls and urls:
+        try:
+            url_results = await url_verifier.verify_urls(urls)
+            broken_urls = len(url_results.get("broken", []))
+
+            if broken_urls > 0:
+                issues.append(Issue(
+                    type="warning",
+                    title=f"{broken_urls} broken URL(s) found",
+                    details=f"Found {broken_urls} inaccessible URLs in references"
+                ))
+
+        except Exception as e:
+            issues.append(Issue(
+                type="error",
+                title="URL verification failed",
+                details=f"Could not verify URLs: {e!s}"
+            ))
+
+    # Resolve DOIs if requested
+    if options.check_doi and dois:
+        try:
+            doi_results = await doi_resolver.resolve_dois(dois)
+            unresolved_dois = len(doi_results.get("unresolved", []))
+
+            if unresolved_dois > 0:
+                issues.append(Issue(
+                    type="warning",
+                    title=f"{unresolved_dois} unresolved DOI(s) found",
+                    details=f"Found {unresolved_dois} DOIs that could not be resolved"
+                ))
+
+        except Exception as e:
+            issues.append(Issue(
+                type="error",
+                title="DOI resolution failed",
+                details=f"Could not resolve DOIs: {e!s}"
+            ))
+
+    # Check for in-text citation matching if requested
+    if options.check_in_text:
+        try:
+            citation_analysis = _analyze_in_text_citations(references, text)
+            missing_in_text = citation_analysis["missing_in_text"]
+            orphaned_in_text = citation_analysis["orphaned_in_text"]
+
+            if missing_in_text > 0:
+                issues.append(Issue(
+                    type="warning",
+                    title=f"{missing_in_text} reference(s) not cited in text",
+                    details="Some references in bibliography are not cited in the main text"
+                ))
+
+            if orphaned_in_text > 0:
+                issues.append(Issue(
+                    type="warning",
+                    title=f"{orphaned_in_text} orphaned citation(s) found",
+                    details="Some in-text citations do not have corresponding references"
+                ))
+
+        except Exception as e:
+            issues.append(Issue(
+                type="error",
+                title="In-text citation analysis failed",
+                details=f"Could not analyze in-text citations: {e!s}"
+            ))
 
     return ReferenceResults(
         total=len(references),
-        broken_urls=0,  # TODO: Implement URL verification
-        unresolved_dois=0,  # TODO: Implement DOI resolution
-        missing_in_text=0,  # TODO: Implement in-text citation matching
-        orphaned_in_text=0,  # TODO: Implement orphaned citation detection
-        issues=[]
+        broken_urls=broken_urls,
+        unresolved_dois=unresolved_dois,
+        missing_in_text=missing_in_text,
+        orphaned_in_text=orphaned_in_text,
+        issues=issues
     )
+
+def _analyze_in_text_citations(references: list, text: str) -> dict[str, int]:
+    """
+    Analyze in-text citations to find missing and orphaned citations
+
+    Args:
+        references: List of reference objects
+        text: Main document text
+
+    Returns:
+        Dictionary with missing_in_text and orphaned_in_text counts
+    """
+    import re
+
+    # Extract author names from references for matching
+    reference_authors = set()
+    for ref in references:
+        ref_text = str(ref) if ref else ""
+
+        # Common patterns for author extraction from different citation styles
+        # APA: Author, A. B. (Year)
+        # MLA: Author, First Last
+        # Chicago: Author, First Last
+
+        # Extract potential author names (simplified approach)
+        # Look for patterns like "Smith, J." or "Smith, John" at start of reference
+        author_patterns = [
+            r'^([A-Z][a-z]+(?:-[A-Z][a-z]+)?),?\s+[A-Z]\.?(?:\s+[A-Z]\.?)*',  # Last, F. M.
+            r'^([A-Z][a-z]+(?:-[A-Z][a-z]+)?),?\s+[A-Z][a-z]+',  # Last, First
+            r'^([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+et\s+al\.?',  # Smith et al.
+        ]
+
+        for pattern in author_patterns:
+            matches = re.findall(pattern, ref_text)
+            for match in matches:
+                if isinstance(match, str):
+                    reference_authors.add(match.lower())
+                elif isinstance(match, tuple):
+                    reference_authors.add(match[0].lower())
+
+    # Find in-text citations
+    in_text_citations = set()
+
+    # Common in-text citation patterns
+    citation_patterns = [
+        r'\(([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s*,?\s*\d{4}\)',  # (Smith, 2023)
+        r'\(([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+et\s+al\.?\s*,?\s*\d{4}\)',  # (Smith et al., 2023)
+        r'([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+\(\d{4}\)',  # Smith (2023)
+        r'([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s+et\s+al\.?\s+\(\d{4}\)',  # Smith et al. (2023)
+        r'\[(\d+)\]',  # [1] - numbered citations
+        r'\(([A-Z][a-z]+(?:-[A-Z][a-z]+)?)\s*&\s*[A-Z][a-z]+(?:-[A-Z][a-z]+)?\s*,?\s*\d{4}\)',  # (Smith & Jones, 2023)
+    ]
+
+    for pattern in citation_patterns:
+        matches = re.findall(pattern, text)
+        for match in matches:
+            if match.isdigit():
+                # Numbered citation - harder to match without more context
+                continue
+            in_text_citations.add(match.lower())
+
+    # Calculate missing and orphaned citations
+    missing_in_text = 0
+    orphaned_in_text = 0
+
+    if reference_authors:
+        # Count references not cited in text
+        for ref_author in reference_authors:
+            if ref_author not in in_text_citations:
+                missing_in_text += 1
+
+    if in_text_citations:
+        # Count in-text citations without corresponding references
+        for citation_author in in_text_citations:
+            if citation_author not in reference_authors:
+                orphaned_in_text += 1
+
+    return {
+        "missing_in_text": missing_in_text,
+        "orphaned_in_text": orphaned_in_text
+    }
+
 
 def _detect_citation_styles(references: list) -> list[str]:
     """Detect citation styles present in the references"""
-    # TODO: Implement actual citation style detection
-    styles = []
-    if references:
-        styles.append("apa")  # Placeholder
-    return styles
+    import re
+
+    if not references:
+        return []
+
+    styles_detected = set()
+
+    for ref in references:
+        ref_text = str(ref) if ref else ""
+
+        # APA style patterns
+        # Author, A. B. (Year). Title. Journal, Volume(Issue), pages.
+        if re.search(r'[A-Z][a-z]+,\s+[A-Z]\.\s*[A-Z]?\.\s*\(\d{4}\)\.', ref_text):
+            styles_detected.add("apa")
+
+        # MLA style patterns
+        # Author, First Last. "Title." Journal Volume.Issue (Year): pages.
+        if re.search(r'[A-Z][a-z]+,\s+[A-Z][a-z]+\s+[A-Z][a-z]+\.\s*".*?"\s+.*?\s+\(\d{4}\):', ref_text):
+            styles_detected.add("mla")
+
+        # Chicago style patterns
+        # Author, First Last. "Title." Journal Volume, no. Issue (Year): pages.
+        if re.search(r'[A-Z][a-z]+,\s+[A-Z][a-z]+\s+[A-Z][a-z]+\.\s+".*?"\s+.*?\s+no\.\s+\d+\s+\(\d{4}\):', ref_text):
+            styles_detected.add("chicago")
+
+        # IEEE style patterns
+        # [1] A. Author, "Title," Journal, vol. X, no. Y, pp. Z-W, Year.
+        if re.search(r'\[\d+\]\s+[A-Z]\.\s+[A-Z][a-z]+.*?,\s+".*?",\s+.*?,\s+vol\.\s+\d+', ref_text):
+            styles_detected.add("ieee")
+
+    return list(styles_detected) if styles_detected else ["unknown"]

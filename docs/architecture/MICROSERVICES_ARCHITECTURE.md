@@ -25,16 +25,16 @@ The DocumentLens ecosystem is designed as a collection of specialized microservi
 - **Features**: 5x5 rule, 10-20-30 rule, speaker notes analysis
 - **Integration**: Extracts text → DocumentLens for linguistic analysis
 
-### 4. MediaLens 🎬 (Future Service)
-**Purpose**: Audio and video content analysis
-- **Focus**: Transcription, speaker analysis, visual content metrics
-- **Features**: Pace analysis, key frame extraction, accessibility metrics
+### 4. RecordingLens 🎬 (Future Service)
+**Purpose**: Recorded audio and video content analysis
+- **Focus**: Student submissions - recorded presentations, interviews, podcasts
+- **Features**: Transcription, speech quality, pacing analysis, accessibility metrics
 - **Integration**: Generates transcripts → DocumentLens for text analysis
 
-### 5. Orchestrator 🎼 (Frontend/Coordination)
-**Purpose**: Multi-service workflow coordination
-- **Focus**: Result aggregation, caching, workflow management
-- **Approach**: Likely frontend logic rather than separate backend service
+### 5. SubmissionLens 🎼 (Frontend Orchestrator)
+**Purpose**: Student submission router and workflow coordinator
+- **Focus**: Smart routing, progress tracking, result aggregation
+- **Role**: User-facing application that manages the complete submission-to-feedback pipeline
 
 ## Architecture Principles
 
@@ -42,7 +42,7 @@ The DocumentLens ecosystem is designed as a collection of specialized microservi
 Each service has a narrow, well-defined domain of expertise:
 - DocumentLens: Text intelligence only
 - PresentationLens: Presentation structure and design
-- MediaLens: Audio/video processing
+- RecordingLens: Recorded audio/video processing
 - CodeLens: Source code analysis
 
 ### 2. Clean Integration
@@ -55,7 +55,7 @@ File Upload → Specialized Service → Text Extraction → DocumentLens → Com
 Each service can choose optimal technologies:
 - DocumentLens: FastAPI + NLTK for text processing
 - PresentationLens: python-pptx + OpenCV for visual analysis
-- MediaLens: FFmpeg + Whisper for media processing
+- RecordingLens: FFmpeg + Whisper for recorded content processing
 - CodeLens: Language-specific parsers and AST tools
 
 ### 4. Independent Deployment
@@ -80,7 +80,7 @@ graph LR
 ### Pattern 2: Parallel Processing
 ```mermaid
 graph LR
-    A[Upload Video] --> B[MediaLens]
+    A[Upload Recording] --> B[RecordingLens]
     B --> C[Extract Audio]
     B --> D[Extract Transcript]
     B --> E[Visual Analysis]
@@ -163,14 +163,14 @@ graph LR
 - Create PresentationLens specification
 - Maintain backward compatibility during transition
 
-### Phase 3: Media Service Planning
-- Define MediaLens requirements
+### Phase 3: Recording Service Planning
+- Define RecordingLens requirements for student submissions
 - Plan integration with existing transcription services
-- Design streaming vs batch processing APIs
+- Design batch processing APIs for recorded content analysis
 
-### Phase 4: Orchestration
-- Implement frontend orchestration logic
-- Create result aggregation patterns
+### Phase 4: SubmissionLens Development
+- Implement student submission routing and workflow management
+- Create result aggregation and progress tracking
 - Add caching and optimization
 
 ## Success Metrics

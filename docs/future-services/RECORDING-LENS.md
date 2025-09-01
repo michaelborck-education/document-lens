@@ -1,12 +1,12 @@
-# MediaLens: Audio & Video Analysis Microservice
+# RecordingLens: Student Recording Analysis Microservice
 
 ## Service Overview
 
-**MediaLens** is a specialized microservice focused on extracting insights from audio and video content. It processes multimedia files to extract transcripts, analyze audio quality, detect key visual moments, and provide accessibility metrics—all while integrating seamlessly with DocumentLens for comprehensive text analysis.
+**RecordingLens** is a specialized microservice focused on analyzing recorded content that students submit for evaluation - including recorded presentations, interviews, podcasts, and educational videos. It processes multimedia files to extract transcripts, analyze audio quality, detect key visual moments, and provide accessibility metrics—all while integrating seamlessly with DocumentLens for comprehensive text analysis.
 
 ## Core Purpose
 
-Transform multimedia content into actionable insights about:
+Transform student-submitted recordings into actionable feedback about:
 - **Audio Analysis**: Speech quality, pacing, speaker identification, background noise
 - **Video Analysis**: Key frame detection, scene changes, visual quality, accessibility
 - **Content Extraction**: High-quality transcription with speaker attribution
@@ -283,7 +283,7 @@ Response:
 ## Project Structure
 
 ```
-media-lens/
+recording-lens/
 ├── app/
 │   ├── analyzers/
 │   │   ├── audio_analyzer.py          # Speech quality, pace, clarity
@@ -332,7 +332,7 @@ media-lens/
 ## Integration with DocumentLens
 
 ### Workflow Pattern
-1. **MediaLens** receives audio/video file
+1. **RecordingLens** receives student recording file
 2. Extracts high-quality transcript with timestamps
 3. Performs media-specific analysis (audio quality, visual content)
 4. Calls **DocumentLens** `/api/analyze/text` with transcript
@@ -499,4 +499,4 @@ Body: {
 
 ---
 
-**MediaLens** will revolutionize how organizations analyze and optimize their multimedia content, providing deep insights into both technical quality and content effectiveness while seamlessly integrating with DocumentLens for comprehensive content intelligence across all media types.
+**RecordingLens** will revolutionize how educators analyze and provide feedback on student recordings, offering deep insights into both technical quality and content effectiveness while seamlessly integrating with DocumentLens for comprehensive analysis of recorded presentations, interviews, and multimedia submissions.

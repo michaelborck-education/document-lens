@@ -26,7 +26,7 @@ Transform text content into actionable insights through comprehensive linguistic
 - `POST /api/analyze/files` - File upload + text analysis
   - Supports: PDF, DOCX, TXT, Markdown
   - For presentations: Use [PresentationLens](https://github.com/michael-borck/presentation-lens)
-  - For media files: Use [MediaLens](https://github.com/michael-borck/media-lens)
+  - For recordings: Use [RecordingLens](https://github.com/michael-borck/recording-lens)
 
 ## 🎯 Use Cases
 
@@ -43,21 +43,25 @@ DocumentLens is part of a focused microservices architecture:
 |---------|---------|------------|
 | **DocumentLens** | Text analysis & academic intelligence | *This repo* |
 | **PresentationLens** | Presentation design & structure analysis | [presentation-lens](https://github.com/michael-borck/presentation-lens) |
-| **MediaLens** | Audio/video transcription & analysis | [media-lens](https://github.com/michael-borck/media-lens) |
+| **RecordingLens** | Student recordings (video/audio) analysis | [recording-lens](https://github.com/michael-borck/recording-lens) |
 | **CodeLens** | Source code quality & analysis | [code-lens](https://github.com/michael-borck/code-lens) |
+| **SubmissionLens** | Student submission router & frontend | [submission-lens](https://github.com/michael-borck/submission-lens) |
 
 ### Integration Pattern
 ```mermaid
 graph LR
-    A[File Upload] --> B{File Type}
-    B -->|Text/PDF/DOCX| C[DocumentLens]
-    B -->|PPTX| D[PresentationLens]
-    B -->|Audio/Video| E[MediaLens]
-    B -->|Source Code| F[CodeLens]
-    D --> C
-    E --> C
-    F --> C
-    C --> G[Combined Analysis]
+    A[Student Submission] --> B[SubmissionLens Frontend]
+    B --> C{File Type Router}
+    C -->|Text/PDF/DOCX| D[DocumentLens]
+    C -->|PPTX| E[PresentationLens]
+    C -->|Video/Audio| F[RecordingLens]
+    C -->|Source Code| G[CodeLens]
+    E --> D
+    F --> D
+    G --> D
+    D --> H[Combined Feedback]
+    H --> B
+    B --> I[Student Dashboard]
 ```
 
 ## 📚 Documentation

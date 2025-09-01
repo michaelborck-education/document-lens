@@ -2,7 +2,7 @@
 Pydantic schemas for CiteSight API
 """
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -44,9 +44,12 @@ class DocumentComparison(BaseModel):
     issues: int
 
 class SuspiciousPatterns(BaseModel):
-    self_plagiarism: list[Pattern] = Field(default_factory=list)
-    citation_anomalies: list[Pattern] = Field(default_factory=list)
-    style_inconsistencies: list[Pattern] = Field(default_factory=list)
+    self_plagiarism: list[str] = Field(default_factory=list)
+    citation_anomalies: list[str] = Field(default_factory=list)
+    style_inconsistencies: list[str] = Field(default_factory=list)
+    ai_indicators: dict[str, Any] = Field(default_factory=dict)
+    integrity_score: float = Field(default=100.0)
+    all_issues: list[str] = Field(default_factory=list)
 
 class ReferenceResults(BaseModel):
     total: int

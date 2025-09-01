@@ -3,13 +3,15 @@ DocumentLens FastAPI Service
 Multi-Modal Document Analysis Microservice
 """
 
+from typing import Any
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api.routes import analysis, health, text_analysis, academic_analysis, future_endpoints
+from app.api.routes import academic_analysis, analysis, future_endpoints, health, text_analysis
 from app.core.config import settings
 
 # Create rate limiter
@@ -47,7 +49,7 @@ app.include_router(academic_analysis.router, prefix="/api/analyze", tags=["acade
 app.include_router(future_endpoints.router, prefix="/api/analyze", tags=["future-features"])
 
 @app.get("/")
-async def root() -> dict[str, str]:
+async def root() -> dict[str, Any]:
     """Root endpoint"""
     return {
         "service": "DocumentLens",

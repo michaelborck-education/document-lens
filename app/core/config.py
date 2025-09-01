@@ -2,10 +2,9 @@
 Configuration settings for DocumentLens API
 """
 
-import os
 from typing import Any
 
-from pydantic import field_validator, Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 

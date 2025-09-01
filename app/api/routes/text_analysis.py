@@ -41,32 +41,32 @@ async def analyze_text_only(
 ) -> TextAnalysisResponse:
     """
     Core text analysis - readability, quality, and word metrics only.
-    
+
     This endpoint provides essential text analysis without academic features:
     - Readability scores (Flesch, Flesch-Kincaid)
     - Writing quality metrics (passive voice, sentence variety)
     - Word analysis (frequency, n-grams, vocabulary richness)
-    
+
     Perfect for blogs, articles, general writing assessment.
     """
     start_time = time.time()
-    
+
     if not analysis_request.text.strip():
         raise HTTPException(
             status_code=400,
             detail="Text cannot be empty"
         )
-    
+
     try:
         text = analysis_request.text
-        
+
         # Core text analysis
         document_analysis = readability_analyzer.analyze(text)
         writing_quality = writing_quality_analyzer.analyze(text)
         word_analysis = word_analyzer.analyze(text)
-        
+
         processing_time = time.time() - start_time
-        
+
         return TextAnalysisResponse(
             analysis={
                 "text_metrics": {
@@ -82,10 +82,10 @@ async def analyze_text_only(
                 },
                 "writing_quality": {
                     "passive_voice_percentage": writing_quality.passive_voice_percentage,
-                    "sentence_variety_score": writing_quality.sentence_variety_score,
-                    "academic_tone_score": writing_quality.academic_tone_score,
+                    "sentence_variety": writing_quality.sentence_variety,
+                    "academic_tone": writing_quality.academic_tone,
                     "transition_words": writing_quality.transition_words,
-                    "hedging_phrases": writing_quality.hedging_phrases
+                    "hedging_language": writing_quality.hedging_language
                 },
                 "word_analysis": {
                     "unique_words": word_analysis.unique_words if hasattr(word_analysis, 'unique_words') else 0,
@@ -97,11 +97,11 @@ async def analyze_text_only(
             },
             processing_time=processing_time
         )
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Text analysis failed: {str(e)}"
+            detail=f"Text analysis failed: {e!s}"
         ) from e
 
 def _interpret_readability(flesch_score: float) -> str:

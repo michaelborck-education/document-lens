@@ -8,8 +8,8 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from app.analyzers.integrity_checker import IntegrityChecker
 from app.analyzers.readability import ReadabilityAnalyzer
-from app.analyzers.suspicious_patterns import SuspiciousPatternDetector
 from app.analyzers.word_analysis import WordAnalyzer
 from app.analyzers.writing_quality import WritingQualityAnalyzer
 from app.core.config import settings
@@ -33,7 +33,7 @@ reference_extractor = ReferenceExtractor()
 url_verifier = URLVerifier()
 doi_resolver = DOIResolver()
 readability_analyzer = ReadabilityAnalyzer()
-suspicious_pattern_detector = SuspiciousPatternDetector()
+integrity_checker = IntegrityChecker()
 writing_quality_analyzer = WritingQualityAnalyzer()
 word_analyzer = WordAnalyzer()
 
@@ -140,7 +140,7 @@ async def analyze_documents(  # type: ignore[no-untyped-def]
         word_analysis = word_analyzer.analyze(combined_text)
 
         # Detect suspicious patterns
-        suspicious_patterns = suspicious_pattern_detector.detect_patterns(
+        suspicious_patterns = integrity_checker.detect_patterns(
             combined_text,
             references,
             all_texts if options.check_plagiarism else []

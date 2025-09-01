@@ -7,16 +7,16 @@ from fastapi import APIRouter, HTTPException
 router = APIRouter()
 
 @router.post("/files")
-async def analyze_files():
+async def analyze_files() -> None:
     """
     File upload and analysis endpoint (Not yet implemented)
-    
+
     Future capabilities:
     - Upload PDF, DOCX, PPTX, TXT, MD, JSON files
     - Extract text and metadata from documents
     - Perform full text + academic analysis
     - Return structured analysis results
-    
+
     Will support:
     - Multiple file formats
     - Batch processing
@@ -27,7 +27,7 @@ async def analyze_files():
         status_code=501,
         detail={
             "message": "File analysis endpoint coming soon",
-            "status": "not_implemented", 
+            "status": "not_implemented",
             "planned_features": [
                 "Multi-format document upload",
                 "Automatic text extraction",
@@ -42,17 +42,17 @@ async def analyze_files():
     )
 
 @router.post("/audio")
-async def analyze_audio():
+async def analyze_audio() -> None:
     """
     Audio analysis endpoint (Not yet implemented)
-    
+
     Future capabilities:
     - Speech-to-text transcription
     - Audio quality assessment
     - Speaker identification
     - Sentiment analysis of speech
     - Combined with text analysis metrics
-    
+
     Will integrate with existing audio analysis utilities.
     """
     raise HTTPException(
@@ -62,7 +62,7 @@ async def analyze_audio():
             "status": "not_implemented",
             "planned_features": [
                 "Speech-to-text transcription",
-                "Audio quality metrics", 
+                "Audio quality metrics",
                 "Speaker identification",
                 "Speech sentiment analysis",
                 "Combined audio + text analysis"
@@ -73,24 +73,24 @@ async def analyze_audio():
         }
     )
 
-@router.post("/video") 
-async def analyze_video():
+@router.post("/video")
+async def analyze_video() -> None:
     """
     Video analysis endpoint (Not yet implemented)
-    
+
     Future capabilities:
     - Video-to-text extraction (subtitles, OCR)
     - Visual content analysis
     - Scene detection and summarization
     - Multi-modal content correlation
     - Combined video + audio + text analysis
-    
+
     Will integrate with existing video analysis utilities.
     """
     raise HTTPException(
         status_code=501,
         detail={
-            "message": "Video analysis endpoint coming soon", 
+            "message": "Video analysis endpoint coming soon",
             "status": "not_implemented",
             "planned_features": [
                 "Video-to-text extraction",
@@ -106,7 +106,7 @@ async def analyze_video():
     )
 
 @router.get("/roadmap")
-async def get_development_roadmap():
+async def get_development_roadmap() -> dict:
     """
     DocumentLens development roadmap and feature timeline
     """
@@ -129,7 +129,7 @@ async def get_development_roadmap():
                 "timeline": "Q1 2025",
                 "features": [
                     "File upload endpoints",
-                    "PDF/DOCX/PPTX text extraction", 
+                    "PDF/DOCX/PPTX text extraction",
                     "Document metadata extraction",
                     "Batch processing capabilities"
                 ]

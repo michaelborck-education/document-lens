@@ -23,10 +23,7 @@ try:
 except ImportError:
     DocxDocument = None
 
-try:
-    from pptx import Presentation
-except ImportError:
-    Presentation = None
+# PPTX support removed - use PresentationLens service instead
 
 class DocumentProcessor:
     """Handles text extraction from various document formats"""
@@ -49,7 +46,11 @@ class DocumentProcessor:
             elif content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
                 return await self._extract_from_docx(content, filename)
             elif content_type == "application/vnd.openxmlformats-officedocument.presentationml.presentation":
-                return await self._extract_from_pptx(content, filename)
+                raise ValueError(
+                    "PPTX files are no longer supported in DocumentLens. "
+                    "Please use PresentationLens service for presentation analysis. "
+                    "See: https://github.com/michael-borck/presentation-lens"
+                )
             elif content_type in ["text/plain", "text/markdown"]:
                 return await self._extract_from_text(content, filename)
             elif content_type == "application/json":
@@ -127,41 +128,8 @@ class DocumentProcessor:
 
         return "\n\n".join(text_parts)
 
-    async def _extract_from_pptx(self, content: bytes, filename: str) -> str:
-        """Extract text from PPTX file"""
-        if not Presentation:
-            raise ImportError("python-pptx not available. Please install with: pip install python-pptx")
-
-        try:
-            pptx_file = io.BytesIO(content)
-            prs = Presentation(pptx_file)
-
-            text_parts = []
-            for slide in prs.slides:
-                slide_texts = []
-
-                # Extract text from shapes
-                for shape in slide.shapes:
-                    if hasattr(shape, "text") and shape.text.strip():
-                        slide_texts.append(shape.text)
-
-                    # Extract text from tables
-                    if hasattr(shape, "table"):
-                        for row in shape.table.rows:
-                            for cell in row.cells:
-                                if cell.text.strip():
-                                    slide_texts.append(cell.text)
-
-                if slide_texts:
-                    text_parts.append("\n".join(slide_texts))
-
-        except Exception as e:
-            raise ValueError(f"Failed to parse PPTX: {e!s}") from e
-
-        if not text_parts:
-            raise ValueError("No text could be extracted from PPTX")
-
-        return "\n\n".join(text_parts)
+    # PPTX processing removed - use PresentationLens service instead
+    # See: https://github.com/michael-borck/presentation-lens
 
     async def _extract_from_text(self, content: bytes, filename: str) -> str:
         """Extract text from plain text or markdown file"""

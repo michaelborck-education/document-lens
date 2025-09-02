@@ -43,7 +43,7 @@ ENV LANGUAGE=en_AU:en
 ENV LC_ALL=en_AU.UTF-8
 
 # Create app user for security
-RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+RUN groupadd -r appgroup && useradd -r -g appgroup -m appuser
 
 # Set working directory
 WORKDIR /app
@@ -57,18 +57,19 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Copy application code
 COPY app/ ./app/
 
-# Set ownership and permissions
-RUN chown -R appuser:appgroup /app
+# Create directories for app data and set permissions
+RUN mkdir -p /app/logs /app/data/nltk /home/appuser && \
+    chown -R appuser:appgroup /app /home/appuser
+
+# Download NLTK data during build (as root before switching users)
+RUN python -c "import nltk; nltk.download('punkt', download_dir='/app/data/nltk'); nltk.download('stopwords', download_dir='/app/data/nltk')" && \
+    chown -R appuser:appgroup /app/data/nltk
+
+# Set NLTK data path
+ENV NLTK_DATA=/app/data/nltk
 
 # Switch to app user
 USER appuser
-
-# Create directories for app data
-RUN mkdir -p /app/logs /app/data
-
-# Download NLTK data during build
-RUN python -c "import nltk; nltk.download('punkt', download_dir='/app/data/nltk'); nltk.download('stopwords', download_dir='/app/data/nltk')"
-ENV NLTK_DATA=/app/data/nltk
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

@@ -12,13 +12,8 @@ try:
     from nltk.tokenize import sent_tokenize, word_tokenize
     from nltk.util import ngrams
 
-    # Download required NLTK data
-    try:
-        word_tokenize("test")
-        stopwords.words('english')
-    except LookupError:
-        nltk.download('punkt')
-        nltk.download('stopwords')
+    # NLTK data should be pre-downloaded in Docker build
+    # Don't download at import time to avoid permission issues
 
 except ImportError:
     nltk = None

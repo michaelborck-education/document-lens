@@ -9,12 +9,8 @@ try:
     import nltk
     from nltk.tokenize import sent_tokenize, word_tokenize
 
-    # Download required NLTK data
-    try:
-        sent_tokenize("test")
-        word_tokenize("test")
-    except LookupError:
-        nltk.download('punkt')
+    # NLTK data should be pre-downloaded in Docker build
+    # Don't download at import time to avoid permission issues
 
 except ImportError:
     nltk = None

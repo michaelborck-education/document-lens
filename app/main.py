@@ -22,8 +22,8 @@ app = FastAPI(
     title="DocumentLens API",
     description="Australian Document Analysis Microservice - Transform any content into actionable insights",
     version="1.0.0",
-    docs_url="/docs" if settings.DEBUG else None,
-    redoc_url="/redoc" if settings.DEBUG else None
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
 # Add rate limiting

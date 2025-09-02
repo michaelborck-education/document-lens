@@ -1,6 +1,6 @@
-# 🇦🇺 DocumentLens VPS Deployment Guide
+# 🇦🇺 DocumentLens Deployment Guide
 
-Two deployment options for your Australian VPS: **Raw/Native** and **Docker**.
+**Single Container Focus**: DocumentLens runs as a standalone container, with routing and infrastructure managed by the host system.
 
 ## 📋 Prerequisites
 
@@ -92,11 +92,11 @@ sudo systemctl start documentlens
 sudo systemctl status documentlens
 ```
 
-## 🐳 Option 2: Docker Deployment
+## 🐳 Option 2: Docker Deployment (Recommended)
 
-Perfect for isolation and easy updates.
+Perfect for isolation and easy updates. DocumentLens runs as a single container.
 
-### Quick Start (Simple)
+### Quick Start
 ```bash
 # Clone the repository
 git clone https://github.com/michael-borck/document-lens.git
@@ -112,22 +112,13 @@ docker-compose logs -f documentlens
 docker-compose down
 ```
 
-### Production Deployment with Nginx
+### Configuration
 ```bash
-# Clone repository
-git clone https://github.com/michael-borck/document-lens.git
-cd document-lens
+# Edit environment variables in docker-compose.yml
+nano docker-compose.yml
 
-# Edit configuration
-nano docker-compose.yml  # Update environment variables
-nano nginx.conf          # Update server_name to your domain
-
-# Deploy with Nginx reverse proxy
-docker-compose --profile production up -d
-
-# Check status
-docker-compose ps
-docker-compose logs -f
+# The container exposes port 8002 (mapped from internal 8000)
+# Your host system should handle routing and reverse proxy
 ```
 
 ### Manual Docker Commands
@@ -189,18 +180,16 @@ WORKERS=4
 WORKERS=8
 ```
 
-## 🌐 Reverse Proxy Setup
+## 🌐 Host System Routing
 
-### Nginx (Recommended)
-```bash
-# Install Nginx
-sudo apt install nginx
+### Reverse Proxy (Host-Managed)
+The DocumentLens container exposes port 8002. Configure your host's reverse proxy (Nginx, Caddy, Traefik) to route traffic:
 
-# Create site configuration
-sudo tee /etc/nginx/sites-available/documentlens << 'EOF'
+```nginx
+# Example Nginx configuration (on host)
 server {
     listen 80;
-    server_name document-lens.serveur.au;  # Your domain
+    server_name document-lens.your-domain.com;
 
     client_max_body_size 50M;
     
@@ -212,12 +201,6 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
-EOF
-
-# Enable site
-sudo ln -s /etc/nginx/sites-available/documentlens /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
 ```
 
 ### SSL/TLS with Let's Encrypt
@@ -257,18 +240,18 @@ sudo journalctl -u documentlens -f
 
 ### Updates
 ```bash
+# Docker deployment
+cd document-lens
+git pull
+docker-compose down
+docker-compose up -d --build
+
 # Raw deployment
 cd document-lens
 git pull
 source .venv/bin/activate
 uv sync
 sudo systemctl restart documentlens
-
-# Docker deployment
-cd document-lens
-git pull
-docker-compose down
-docker-compose up -d --build
 ```
 
 ## 🔧 Troubleshooting

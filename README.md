@@ -7,14 +7,14 @@ Transform text content into actionable insights through comprehensive linguistic
 ## 🚀 Quick Start
 
 ```bash
-# Raw deployment
-./deploy.sh
-
-# Or Docker deployment
+# Docker deployment (recommended)
 docker-compose up -d
 
+# Or raw deployment
+./deploy.sh
+
 # API available at: http://localhost:8002
-# Documentation: http://localhost:8002/docs (if DEBUG=true)
+# Documentation: http://localhost:8002/docs
 ```
 
 ## 📊 API Endpoints
@@ -68,7 +68,12 @@ graph LR
 
 ## 🚀 Deployment
 
-Two deployment options available:
+### Docker Deployment (Recommended)
+```bash
+git clone https://github.com/michael-borck/document-lens.git
+cd document-lens
+docker-compose up -d  # Single container deployment
+```
 
 ### Raw/Native Deployment
 ```bash
@@ -77,19 +82,12 @@ cd document-lens
 ./deploy.sh  # Handles venv, dependencies, and production server
 ```
 
-### Docker Deployment
-```bash
-git clone https://github.com/michael-borck/document-lens.git
-cd document-lens
-docker-compose up -d  # Simple deployment
-# Or: docker-compose --profile production up -d  # With Nginx
-```
-
 ## 📚 Documentation
 
-- `DEPLOYMENT.md` - Complete VPS deployment guide (raw + Docker)
+- `DEPLOYMENT.md` - Deployment guide for Docker and raw installations
 - `DOCUMENTLENS_SETUP.md` - Setup and usage instructions
 - `.env.example` - Configuration template
+- `docs/` - Additional architecture and integration documentation
 
 ---
 

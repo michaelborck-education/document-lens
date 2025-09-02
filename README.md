@@ -13,8 +13,8 @@ Transform text content into actionable insights through comprehensive linguistic
 # Or Docker deployment
 docker-compose up -d
 
-# API available at: http://localhost:8000
-# Documentation: http://localhost:8000/docs (if DEBUG=true)
+# API available at: http://localhost:8002
+# Documentation: http://localhost:8002/docs (if DEBUG=true)
 ```
 
 ## 📊 API Endpoints

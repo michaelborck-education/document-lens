@@ -73,7 +73,7 @@ Group=www-data
 WorkingDirectory=/opt/documentlens
 Environment=PATH=/opt/documentlens/.venv/bin
 ExecStart=/opt/documentlens/.venv/bin/gunicorn app.main:app \
-    --bind 0.0.0.0:8000 \
+    --bind 0.0.0.0:8002 \
     --workers 4 \
     --worker-class uvicorn.workers.UvicornWorker \
     --access-logfile - \
@@ -138,7 +138,7 @@ docker build -t documentlens .
 # Run container
 docker run -d \
   --name documentlens \
-  --port 8000:8000 \
+  --port 8000:8002 \
   --env DEBUG=false \
   --env SECRET_KEY=your-secret-key \
   --restart unless-stopped \
@@ -205,7 +205,7 @@ server {
     client_max_body_size 50M;
     
     location / {
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:8002;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -277,7 +277,7 @@ docker-compose up -d --build
 
 1. **Port already in use**
    ```bash
-   sudo lsof -i :8000
+   sudo lsof -i :8002
    sudo kill -9 <PID>
    ```
 
@@ -312,15 +312,15 @@ curl -w "@curl-format.txt" -s -o /dev/null http://your-domain.com/health
 
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8002/health
 
 # Text analysis
-curl -X POST http://localhost:8000/text \
+curl -X POST http://localhost:8002/text \
   -H "Content-Type: application/json" \
   -d '{"text": "This is a test of the Australian DocumentLens service."}'
 
 # File upload test
-curl -X POST http://localhost:8000/files \
+curl -X POST http://localhost:8002/files \
   -F "files=@test.txt" \
   -F "analysis_type=full"
 ```

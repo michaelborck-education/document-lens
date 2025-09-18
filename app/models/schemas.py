@@ -89,6 +89,36 @@ class AnalysisResults(BaseModel):
     processing_time: float
     file_count: int
 
+# N-gram response
+class Ngram(BaseModel):
+    phrase: str
+    count: int
+
+class NgramResponse(BaseModel):
+    n: int
+    top_ngrams: list[Ngram] = Field(default_factory=list)
+
+# NER response models
+class NEREntity(BaseModel):
+    text: str
+    label: str
+    start_char: int
+    end_char: int
+
+class NERResponse(BaseModel):
+    entities: list[NEREntity] = Field(default_factory=list)
+
+# Keyword search models
+class KeywordMatch(BaseModel):
+    document: str
+    context: str
+    start_char: int
+    end_char: int
+
+class KeywordSearchResponse(BaseModel):
+    keyword: str
+    matches: list[KeywordMatch] = Field(default_factory=list)
+
 # Response models
 class ApiResponse(BaseModel):
     status: Literal["success", "error"]
@@ -104,3 +134,71 @@ class ErrorResponse(BaseModel):
     error: str
     details: str | None = None
     code: int | None = None
+
+
+# Batch processing models
+class BatchJobStatus(BaseModel):
+    """Status information for a batch job"""
+    total_items: int = 0
+    completed_items: int = 0
+    failed_items: int = 0
+    progress_percentage: float = 0.0
+    current_status: Literal["created", "running", "paused", "completed", "failed", "cancelled"] = "created"
+    estimated_completion: str | None = None
+
+class BatchJobCreate(BaseModel):
+    """Request model for creating a new batch job"""
+    name: str = Field(..., min_length=1, max_length=255)
+    description: str | None = Field(None, max_length=1000)
+    analysis_type: Literal["text", "academic", "full"] = Field(default="full")
+    analysis_options: dict[str, Any] = Field(default_factory=dict)
+    priority: Literal["low", "normal", "high"] = Field(default="normal")
+    max_retries: int = Field(default=3, ge=0, le=10)
+
+class BatchJobResponse(BaseModel):
+    """Response model for batch job information"""
+    id: str
+    name: str
+    description: str | None
+    created_at: str
+    updated_at: str
+    status: BatchJobStatus
+    analysis_type: str
+    analysis_options: dict[str, Any]
+    priority: str
+    max_retries: int
+    result_count: int = 0
+
+class BatchItemCreate(BaseModel):
+    """Request model for adding items to a batch job"""
+    job_id: str
+    items: list[dict[str, Any]] = Field(..., min_items=1, max_items=1000)
+
+class BatchItemStatus(BaseModel):
+    """Status of an individual batch item"""
+    id: str
+    job_id: str
+    status: Literal["pending", "processing", "completed", "failed", "skipped"] = "pending"
+    input_data: dict[str, Any]
+    result_data: dict[str, Any] | None = None
+    error_message: str | None = None
+    retry_count: int = 0
+    created_at: str
+    processed_at: str | None = None
+    processing_time: float | None = None
+
+class BatchExportRequest(BaseModel):
+    """Request model for exporting batch results"""
+    job_id: str
+    export_format: Literal["jsonl", "csv", "parquet"] = "jsonl"
+    include_metadata: bool = True
+    filter_status: list[str] | None = None  # Filter by item status
+
+class BatchExportResponse(BaseModel):
+    """Response model for batch export"""
+    download_url: str
+    export_format: str
+    file_size_bytes: int
+    item_count: int
+    created_at: str
+    expires_at: str

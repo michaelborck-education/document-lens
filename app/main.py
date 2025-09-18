@@ -11,7 +11,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from app.api.routes import academic_analysis, future_endpoints, health, text_analysis
+from app.api.routes import academic_analysis, advanced_text, batch, future_endpoints, health, text_analysis
 from app.core.config import settings
 
 # Create rate limiter
@@ -44,6 +44,8 @@ app.include_router(health.router, tags=["health"])
 app.include_router(text_analysis.router, tags=["text-analysis"])
 app.include_router(academic_analysis.router, tags=["academic-analysis"])
 app.include_router(future_endpoints.router, tags=["file-processing"])
+app.include_router(advanced_text.router, tags=["advanced-text"])
+app.include_router(batch.router, tags=["batch"])
 
 @app.get("/")
 async def root() -> dict[str, Any]:
@@ -58,12 +60,14 @@ async def root() -> dict[str, Any]:
                 "health": "/health",
                 "text_analysis": "/text",
                 "academic_analysis": "/academic",
-                "file_processing": "/files"
+                "file_processing": "/files",
+                "batch_processing": "/batch"
             },
             "description": {
                 "text_analysis": "Analyse raw text (JSON input)",
                 "academic_analysis": "Academic analysis of raw text (JSON input)",
-                "file_processing": "Upload and analyse files (form data)"
+                "file_processing": "Upload and analyse files (form data)",
+                "batch_processing": "Large-scale batch document analysis for research"
             }
         }
     }

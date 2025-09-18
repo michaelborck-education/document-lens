@@ -242,7 +242,7 @@ class DocumentProcessor:
 
     def _extract_pdf_metadata(self, content: bytes) -> dict[str, Any]:
         """Extract metadata from PDF"""
-        metadata = {}
+        metadata: dict[str, Any] = {}
 
         if self.pdf_available:
             try:
@@ -275,7 +275,7 @@ class DocumentProcessor:
 
     def _extract_docx_metadata(self, content: bytes) -> dict[str, Any]:
         """Extract metadata from DOCX"""
-        metadata = {}
+        metadata: dict[str, Any] = {}
 
         if self.docx_available:
             try:
@@ -307,7 +307,7 @@ class DocumentProcessor:
 
     def _extract_pptx_metadata(self, content: bytes) -> dict[str, Any]:
         """Extract metadata from PPTX"""
-        metadata = {}
+        metadata: dict[str, Any] = {}
 
         if self.pptx_available:
             try:

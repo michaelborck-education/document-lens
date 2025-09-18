@@ -68,6 +68,9 @@ RUN python -c "import nltk; nltk.download('punkt', download_dir='/app/data/nltk'
 # Set NLTK data path
 ENV NLTK_DATA=/app/data/nltk
 
+# Install spaCy model (best-effort during build)
+RUN python -m pip install --no-cache-dir spacy==3.7.2 && python -m spacy download en_core_web_sm || true
+
 # Switch to app user
 USER appuser
 

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from app.analyzers.ner_analyzer import NerAnalyzer
 from app.analyzers.readability import ReadabilityAnalyzer
 from app.analyzers.word_analysis import WordAnalyzer
 from app.analyzers.writing_quality import WritingQualityAnalyzer
@@ -21,6 +22,7 @@ limiter = Limiter(key_func=get_remote_address)
 readability_analyzer = ReadabilityAnalyzer()
 writing_quality_analyzer = WritingQualityAnalyzer()
 word_analyzer = WordAnalyzer()
+ner_analyzer = NerAnalyzer()
 
 class TextAnalysisRequest(BaseModel):
     text: str
@@ -64,6 +66,7 @@ async def analyse_text_only(
         document_analysis = readability_analyzer.analyze(text)
         writing_quality = writing_quality_analyzer.analyze(text)
         word_analysis = word_analyzer.analyze(text)
+        ner_results = ner_analyzer.analyze(text)
 
         processing_time = time.time() - start_time
 
@@ -93,7 +96,8 @@ async def analyse_text_only(
                     "top_words": word_analysis.top_words if hasattr(word_analysis, 'top_words') else [],
                     "bigrams": word_analysis.bigrams if hasattr(word_analysis, 'bigrams') else [],
                     "trigrams": word_analysis.trigrams if hasattr(word_analysis, 'trigrams') else []
-                }
+                },
+                "ner": ner_results.dict() if hasattr(ner_results, 'dict') else ner_results.__dict__
             },
             processing_time=processing_time
         )

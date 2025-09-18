@@ -245,7 +245,7 @@ async def _analyse_file_content(
             }
 
         # Integrity check
-        results["integrity"] = integrity_checker.detect_patterns(text, references, []).model_dump()
+        results["integrity"] = integrity_checker.detect_patterns(text, references, []).__dict__ if hasattr(integrity_checker.detect_patterns(text, references, []), '__dict__') else integrity_checker.detect_patterns(text, references, []).model_dump()
 
     return results
 
@@ -278,8 +278,12 @@ def _compare_documents(texts: list[str], filenames: list[str]) -> dict[str, Any]
                 "shared_words": overlap
             })
 
+    from typing import cast
+
+    similarities: list[float] = [cast("float", c.get("similarity_percentage", 0.0)) for c in comparisons]
+
     return {
         "total_comparisons": len(comparisons),
         "comparisons": comparisons,
-        "highest_similarity": max((c["similarity_percentage"] for c in comparisons), default=0.0) if comparisons else 0.0
+        "highest_similarity": max(similarities) if similarities else 0.0
     }

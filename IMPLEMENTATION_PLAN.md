@@ -82,11 +82,12 @@ Based on our analysis and discussion, this document outlines the prioritized imp
 
 ### 9. Optimization ⏳
 - [ ] Add Redis caching for analysis results
-- [ ] Implement batch processing optimization
 - [ ] Add rate limiting per endpoint
 - [ ] Optimize regex patterns
 - [ ] Add connection pooling for external APIs
 - [ ] Implement async processing where possible
+
+> **Note**: Batch processing was removed from DocumentLens. The desktop app handles its own queue management via SQLite, calling the API per-document. This keeps DocumentLens stateless and focused.
 
 ### 10. Monitoring & Logging ⏳
 - [ ] Add structured logging

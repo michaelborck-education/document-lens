@@ -17,24 +17,29 @@ class AnalysisOptions(BaseModel):
     check_in_text: bool = Field(default=True)
     processing_mode: Literal["server", "local"] = Field(default="server")
 
+
 # Result models
 class Pattern(BaseModel):
     text: str
     severity: Literal["high", "medium", "low"]
+
 
 class Issue(BaseModel):
     type: Literal["error", "warning"]
     title: str
     details: str
 
+
 class WordFrequency(BaseModel):
     word: str
     count: int
     size: int
 
+
 class PhraseCount(BaseModel):
     phrase: str
     count: int
+
 
 class DocumentComparison(BaseModel):
     name: str
@@ -42,6 +47,7 @@ class DocumentComparison(BaseModel):
     readability: float
     references: int
     issues: int
+
 
 class SuspiciousPatterns(BaseModel):
     self_plagiarism: list[str] = Field(default_factory=list)
@@ -51,6 +57,7 @@ class SuspiciousPatterns(BaseModel):
     integrity_score: float = Field(default=100.0)
     all_issues: list[str] = Field(default_factory=list)
 
+
 class ReferenceResults(BaseModel):
     total: int
     broken_urls: int
@@ -58,6 +65,7 @@ class ReferenceResults(BaseModel):
     missing_in_text: int
     orphaned_in_text: int
     issues: list[Issue] = Field(default_factory=list)
+
 
 class DocumentAnalysis(BaseModel):
     word_count: int
@@ -67,6 +75,7 @@ class DocumentAnalysis(BaseModel):
     flesch_score: float
     flesch_kincaid_grade: float
 
+
 class WritingQuality(BaseModel):
     passive_voice_percentage: float
     sentence_variety: float
@@ -74,10 +83,12 @@ class WritingQuality(BaseModel):
     hedging_language: float
     academic_tone: float
 
+
 class WordAnalysis(BaseModel):
     most_frequent: list[WordFrequency] = Field(default_factory=list)
     unique_words: list[str] = Field(default_factory=list)
     unique_phrases: list[PhraseCount] = Field(default_factory=list)
+
 
 class AnalysisResults(BaseModel):
     references: ReferenceResults
@@ -89,14 +100,51 @@ class AnalysisResults(BaseModel):
     processing_time: float
     file_count: int
 
+
+# Page-level text extraction models
+class PageText(BaseModel):
+    """Text content from a single page"""
+
+    page_number: int
+    text: str
+
+
+class ExtractedText(BaseModel):
+    """Structured text extraction with page-level granularity"""
+
+    full_text: str
+    pages: list[PageText] = Field(default_factory=list)
+    total_pages: int
+
+
+class InferredMetadata(BaseModel):
+    """Metadata inferred from document content"""
+
+    probable_year: int | None = None
+    probable_company: str | None = None
+    probable_industry: str | None = None
+    document_type: str | None = None
+    confidence_scores: dict[str, float] = Field(
+        default_factory=lambda: {
+            "year": 0.0,
+            "company": 0.0,
+            "industry": 0.0,
+            "document_type": 0.0,
+        }
+    )
+    extraction_notes: list[str] = Field(default_factory=list)
+
+
 # N-gram response
 class Ngram(BaseModel):
     phrase: str
     count: int
 
+
 class NgramResponse(BaseModel):
     n: int
     top_ngrams: list[Ngram] = Field(default_factory=list)
+
 
 # NER response models
 class NEREntity(BaseModel):
@@ -105,8 +153,10 @@ class NEREntity(BaseModel):
     start_char: int
     end_char: int
 
+
 class NERResponse(BaseModel):
     entities: list[NEREntity] = Field(default_factory=list)
+
 
 # Keyword search models
 class KeywordMatch(BaseModel):
@@ -115,9 +165,35 @@ class KeywordMatch(BaseModel):
     start_char: int
     end_char: int
 
+
 class KeywordSearchResponse(BaseModel):
     keyword: str
     matches: list[KeywordMatch] = Field(default_factory=list)
+
+
+# Batch keyword search models
+class DocumentKeywordResult(BaseModel):
+    """Keyword results for a single document"""
+
+    document: str
+    count: int
+    contexts: list[str] = Field(default_factory=list)
+
+
+class KeywordResult(BaseModel):
+    """Results for a single keyword across all documents"""
+
+    keyword: str
+    total_matches: int
+    by_document: list[DocumentKeywordResult] = Field(default_factory=list)
+
+
+class MultiKeywordSearchResponse(BaseModel):
+    """Response for batch keyword search across multiple keywords and documents"""
+
+    results: list[KeywordResult] = Field(default_factory=list)
+    summary: dict[str, Any] = Field(default_factory=dict)
+
 
 # Response models
 class ApiResponse(BaseModel):
@@ -125,80 +201,14 @@ class ApiResponse(BaseModel):
     message: str | None = None
     data: dict | None = None
 
+
 class HealthResponse(BaseModel):
     status: str
     version: str
     uptime: float
 
+
 class ErrorResponse(BaseModel):
     error: str
     details: str | None = None
     code: int | None = None
-
-
-# Batch processing models
-class BatchJobStatus(BaseModel):
-    """Status information for a batch job"""
-    total_items: int = 0
-    completed_items: int = 0
-    failed_items: int = 0
-    progress_percentage: float = 0.0
-    current_status: Literal["created", "running", "paused", "completed", "failed", "cancelled"] = "created"
-    estimated_completion: str | None = None
-
-class BatchJobCreate(BaseModel):
-    """Request model for creating a new batch job"""
-    name: str = Field(..., min_length=1, max_length=255)
-    description: str | None = Field(None, max_length=1000)
-    analysis_type: Literal["text", "academic", "full"] = Field(default="full")
-    analysis_options: dict[str, Any] = Field(default_factory=dict)
-    priority: Literal["low", "normal", "high"] = Field(default="normal")
-    max_retries: int = Field(default=3, ge=0, le=10)
-
-class BatchJobResponse(BaseModel):
-    """Response model for batch job information"""
-    id: str
-    name: str
-    description: str | None
-    created_at: str
-    updated_at: str
-    status: BatchJobStatus
-    analysis_type: str
-    analysis_options: dict[str, Any]
-    priority: str
-    max_retries: int
-    result_count: int = 0
-
-class BatchItemCreate(BaseModel):
-    """Request model for adding items to a batch job"""
-    job_id: str
-    items: list[dict[str, Any]] = Field(..., min_items=1, max_items=1000)
-
-class BatchItemStatus(BaseModel):
-    """Status of an individual batch item"""
-    id: str
-    job_id: str
-    status: Literal["pending", "processing", "completed", "failed", "skipped"] = "pending"
-    input_data: dict[str, Any]
-    result_data: dict[str, Any] | None = None
-    error_message: str | None = None
-    retry_count: int = 0
-    created_at: str
-    processed_at: str | None = None
-    processing_time: float | None = None
-
-class BatchExportRequest(BaseModel):
-    """Request model for exporting batch results"""
-    job_id: str
-    export_format: Literal["jsonl", "csv", "parquet"] = "jsonl"
-    include_metadata: bool = True
-    filter_status: list[str] | None = None  # Filter by item status
-
-class BatchExportResponse(BaseModel):
-    """Response model for batch export"""
-    download_url: str
-    export_format: str
-    file_size_bytes: int
-    item_count: int
-    created_at: str
-    expires_at: str

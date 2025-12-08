@@ -20,8 +20,15 @@
 
 ### 📄 Document Processing
 - **Multi-format Support**: PDF, DOCX, TXT, Markdown text extraction
+- **Page-level Extraction**: Extract text with page boundaries preserved (PDF, DOCX)
 - **Content Normalization**: Clean text preparation for analysis
 - **Metadata Extraction**: Document properties, structural information
+- **Smart Metadata Inference**: Auto-detect year, company name, industry, document type from content
+
+### 🔍 Sustainability Research Support
+- **Framework Keyword Search**: Batch search across TCFD, GRI, SDGs, SASB keywords
+- **N-gram Filtering**: Extract n-grams with custom filter terms
+- **Cross-document Analysis**: Compare multiple reports for keyword density
 
 ## Technical Architecture
 
@@ -30,19 +37,29 @@
 app/
 ├── analyzers/           # Core analysis engines
 │   ├── integrity_checker.py    # AI detection, plagiarism
+│   ├── keyword_analyzer.py     # Keyword search (single & batch)
+│   ├── ner_analyzer.py         # Named entity recognition
+│   ├── ngram_analyzer.py       # N-gram extraction with filtering
 │   ├── readability.py          # Readability metrics  
 │   ├── word_analysis.py        # Word frequency, n-grams
 │   └── writing_quality.py      # Style, tone analysis
 ├── services/            # External integrations
-│   ├── document_processor.py   # File processing
-│   ├── doi_resolver.py        # DOI resolution
+│   ├── document_processor.py   # File processing, metadata inference
+│   ├── batch_service.py        # Batch job management
+│   ├── doi_resolver.py         # DOI resolution
 │   ├── reference_extractor.py  # Citation extraction
-│   └── url_verifier.py        # URL validation
+│   └── url_verifier.py         # URL validation
 ├── api/                # REST API endpoints
 │   └── routes/
-│       ├── analysis.py        # Main analysis endpoints
+│       ├── analysis.py         # Main analysis endpoints
 │       ├── academic_analysis.py # Academic-specific analysis
-│       └── health.py          # Health checks
+│       ├── advanced_text.py    # N-grams, NER, batch keyword search
+│       ├── batch.py            # Batch processing endpoints
+│       ├── future_endpoints.py # File upload with metadata inference
+│       ├── health.py           # Health checks
+│       └── text_analysis.py    # Basic text analysis
+├── data/               # Configuration data
+│   └── ai_patterns.json # AI detection patterns
 └── models/             # Data schemas
     └── schemas.py      # Pydantic models
 ```
@@ -78,6 +95,11 @@ Each endpoint has a single, clear responsibility:
 - `/api/analyze/text` - Pure text analysis
 - `/api/analyze/academic` - Academic-specific features
 - `/api/analyze/files` - Document processing + analysis
+- `/api/analyze/files/infer-metadata` - Smart metadata inference from documents
+- `/api/text/infer-metadata` - Metadata inference from raw text
+- `/api/advanced/ngrams` - N-gram extraction with filter support
+- `/api/advanced/ner` - Named entity recognition
+- `/api/advanced/search/keywords` - Batch keyword search (POST)
 
 ### 2. Consistent Response Format
 ```json
@@ -95,6 +117,46 @@ Each endpoint has a single, clear responsibility:
     },
     "errors": [],
     "warnings": []
+}
+```
+
+### Desktop App Integration
+The API is designed to support the **document-lens-desktop** Electron application for sustainability research:
+
+```json
+// Metadata inference response
+{
+    "probable_year": 2023,
+    "probable_company": "Acme Corporation",
+    "probable_industry": "Energy",
+    "document_type": "Sustainability Report",
+    "confidence_scores": {
+        "year": 0.9,
+        "company": 0.85,
+        "industry": 0.7,
+        "document_type": 0.95
+    },
+    "extraction_notes": ["Year 2023 found in filename"]
+}
+```
+
+```json
+// Batch keyword search response
+{
+    "results": [
+        {
+            "keyword": "carbon footprint",
+            "total_matches": 15,
+            "by_document": [
+                {"document": "report.pdf", "count": 15, "contexts": ["...reduce our carbon footprint by..."]}
+            ]
+        }
+    ],
+    "summary": {
+        "total_keywords": 50,
+        "keywords_with_matches": 32,
+        "total_matches": 245
+    }
 }
 ```
 
@@ -117,6 +179,16 @@ Other services can extract text and send to DocumentLens:
 ```
 PPTX → PresentationLens → Extract Text → DocumentLens → Combined Results
 Video → RecordingLens → Transcript → DocumentLens → Combined Results
+```
+
+### 3. Desktop Application Integration
+The document-lens-desktop Electron app bundles DocumentLens for offline research:
+```
+Annual Report (PDF) → Desktop App → Bundled DocumentLens API
+                                  ↓
+                    Metadata Inference + Keyword Analysis
+                                  ↓
+                    SQLite Storage → Visualization (Recharts)
 ```
 
 ### 3. Frontend Integration

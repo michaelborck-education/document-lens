@@ -19,11 +19,21 @@ docker-compose up -d
 
 ## 📊 API Endpoints
 
-### Core Analysis (Clean Australian URLs)
+### Core Analysis
 - `GET /health` - Service health check
 - `POST /text` - Text analysis (readability, quality, word frequency)
 - `POST /academic` - Academic analysis (citations, DOI resolution, integrity)
 - `POST /files` - File upload + analysis (PDF, DOCX, TXT, MD)
+
+### Advanced Text Analysis
+- `POST /advanced/ngrams` - N-gram extraction with optional filter terms
+- `POST /advanced/ner` - Named entity recognition
+- `POST /advanced/search/keywords` - Batch keyword search across multiple terms
+
+### Document Intelligence
+- `POST /files/infer-metadata` - Infer year, company, industry, document type from content
+- `POST /text/infer-metadata` - Metadata inference from raw text
+- Page-level text extraction (via `include_extracted_text=true` on `/files`)
 
 ### Integration
 - Root endpoint: `GET /` - Service info and available endpoints
@@ -35,7 +45,16 @@ docker-compose up -d
 - **Text Analysis**: Readability, writing quality, word frequency for any text content
 - **Academic Analysis**: Citation verification, DOI resolution, AI detection, integrity checking
 - **Document Intelligence**: Extract and analyze text from PDFs and Word documents
+- **Sustainability Research**: Batch keyword analysis for TCFD, GRI, SDGs, SASB frameworks
+- **Corporate Report Analysis**: Auto-detect metadata (year, company, industry) from annual reports
 - **Multi-Service Workflows**: Integrate with specialized analysis services
+
+### Desktop Application Support
+DocumentLens powers the **document-lens-desktop** Electron application for researchers analyzing corporate sustainability reports. Features include:
+- Smart metadata inference (company name, year, industry, document type)
+- Framework keyword analysis (TCFD, GRI, SDGs, SASB)
+- Batch processing with SQLite storage
+- Offline operation via bundled Python backend
 
 ## 🏗️ Microservices Ecosystem
 

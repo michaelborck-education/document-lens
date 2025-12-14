@@ -17,12 +17,12 @@ class Settings(BaseSettings):
     # CORS settings - can be set as comma-separated string in .env
     ALLOWED_ORIGINS: str | list[str] = Field(
         default="http://localhost:5173,http://localhost:3000",
-        description="Comma-separated list of allowed origins"
+        description="Comma-separated list of allowed origins",
     )
 
     # File processing settings
-    MAX_FILE_SIZE: int = 10485760  # 10MB default
-    PROCESS_TIMEOUT: int = 120   # 2 minutes
+    MAX_FILE_SIZE: int = 52428800  # 50MB default
+    PROCESS_TIMEOUT: int = 120  # 2 minutes
     MAX_FILES_PER_REQUEST: int = 5
 
     # Rate limiting
@@ -36,7 +36,7 @@ class Settings(BaseSettings):
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # PPTX
         "text/plain",
         "text/markdown",
-        "application/json"
+        "application/json",
     ]
 
     # External services
@@ -48,11 +48,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    @field_validator('ALLOWED_ORIGINS')
+    @field_validator("ALLOWED_ORIGINS")
     @classmethod
     def parse_cors(cls, v: Any) -> list[str]:
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(',')]
+            return [origin.strip() for origin in v.split(",")]
         elif isinstance(v, list):
             return v
         return []
@@ -61,9 +61,10 @@ class Settings(BaseSettings):
         case_sensitive = True
         env_file = ".env"
 
+
 # Create settings instance
 settings = Settings()
 
 # Ensure ALLOWED_ORIGINS is always a list
 if isinstance(settings.ALLOWED_ORIGINS, str):
-    settings.ALLOWED_ORIGINS = [origin.strip() for origin in settings.ALLOWED_ORIGINS.split(',')]
+    settings.ALLOWED_ORIGINS = [origin.strip() for origin in settings.ALLOWED_ORIGINS.split(",")]

@@ -90,19 +90,12 @@ async def analyse_text_only(
                     "hedging_language": writing_quality.hedging_language,
                 },
                 "word_analysis": {
-                    "unique_words": word_analysis.unique_words
-                    if hasattr(word_analysis, "unique_words")
-                    else 0,
-                    "vocabulary_richness": word_analysis.vocabulary_richness
-                    if hasattr(word_analysis, "vocabulary_richness")
-                    else 0.0,
-                    "top_words": word_analysis.top_words
-                    if hasattr(word_analysis, "top_words")
-                    else [],
-                    "bigrams": word_analysis.bigrams if hasattr(word_analysis, "bigrams") else [],
-                    "trigrams": word_analysis.trigrams
-                    if hasattr(word_analysis, "trigrams")
-                    else [],
+                    "unique_words": word_analysis.unique_word_count,
+                    "total_words": word_analysis.total_word_count,
+                    "vocabulary_richness": word_analysis.vocabulary_richness,
+                    "top_words": [w.model_dump() for w in word_analysis.top_words],
+                    "bigrams": [p.model_dump() for p in word_analysis.bigrams],
+                    "trigrams": [p.model_dump() for p in word_analysis.trigrams],
                 },
                 "ner": ner_results.model_dump()
                 if hasattr(ner_results, "model_dump")

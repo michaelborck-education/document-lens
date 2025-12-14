@@ -152,6 +152,29 @@ class TestFileUploadEndpoint:
 
     @pytest.mark.pdf
     @pytest.mark.slow
+    def test_upload_large_pdf(self, client: TestClient, sample_pdf_paths: list[Path]):
+        """PDFs over 10MB but under 50MB should upload successfully."""
+        # Find a PDF between 10MB and 50MB
+        large_pdfs = [
+            p for p in sample_pdf_paths if 10 * 1024 * 1024 < p.stat().st_size < 50 * 1024 * 1024
+        ]
+
+        if not large_pdfs:
+            pytest.skip("No PDF files between 10MB and 50MB in test-data")
+
+        pdf_path = large_pdfs[0]
+        with open(pdf_path, "rb") as f:
+            response = client.post(
+                "/files",
+                files={"files": (pdf_path.name, f, "application/pdf")},
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["files_processed"] == 1
+
+    @pytest.mark.pdf
+    @pytest.mark.slow
     def test_upload_multiple_pdfs(self, client: TestClient, sample_pdf_paths: list[Path]):
         """Uploading multiple PDFs should process all files (within size limits)."""
         # Filter to only PDFs under 50MB (the default MAX_FILE_SIZE)
@@ -159,7 +182,7 @@ class TestFileUploadEndpoint:
         small_pdfs = [p for p in sample_pdf_paths if p.stat().st_size < max_size]
 
         if len(small_pdfs) < 2:
-            pytest.skip("Need at least 2 PDF files under 10MB for this test")
+            pytest.skip("Need at least 2 PDF files under 50MB for this test")
 
         files = []
         file_handles = []

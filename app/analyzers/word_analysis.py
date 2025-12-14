@@ -32,11 +32,52 @@ class WordAnalyzer:
         """Initialize word analyzer with stop words"""
         # Common English stop words as fallback
         self.fallback_stopwords = {
-            'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
-            'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
-            'to', 'was', 'will', 'with', 'would', 'i', 'you', 'we', 'they',
-            'this', 'these', 'those', 'or', 'but', 'not', 'have', 'had', 'do',
-            'does', 'did', 'can', 'could', 'should', 'may', 'might', 'must'
+            "a",
+            "an",
+            "and",
+            "are",
+            "as",
+            "at",
+            "be",
+            "by",
+            "for",
+            "from",
+            "has",
+            "he",
+            "in",
+            "is",
+            "it",
+            "its",
+            "of",
+            "on",
+            "that",
+            "the",
+            "to",
+            "was",
+            "will",
+            "with",
+            "would",
+            "i",
+            "you",
+            "we",
+            "they",
+            "this",
+            "these",
+            "those",
+            "or",
+            "but",
+            "not",
+            "have",
+            "had",
+            "do",
+            "does",
+            "did",
+            "can",
+            "could",
+            "should",
+            "may",
+            "might",
+            "must",
         }
 
     def analyze(self, text: str) -> WordAnalysis:
@@ -61,10 +102,7 @@ class WordAnalyzer:
         stop_words = self._get_stop_words()
 
         # Filter out stop words and short words
-        meaningful_words = [
-            word for word in words
-            if len(word) > 2 and word not in stop_words
-        ]
+        meaningful_words = [word for word in words if len(word) > 2 and word not in stop_words]
 
         # Calculate word frequencies
         word_freq = Counter(meaningful_words)
@@ -76,19 +114,33 @@ class WordAnalyzer:
         # Extract meaningful phrases (bigrams and trigrams)
         unique_phrases = self._extract_phrases(text, stop_words)
 
+        # Calculate vocabulary metrics
+        all_words = self._tokenize_words(text)
+        unique_word_count = len(set(all_words))
+        total_word_count = len(all_words)
+        vocabulary_richness = (
+            (unique_word_count / total_word_count * 100) if total_word_count > 0 else 0.0
+        )
+
+        # Split phrases into bigrams and trigrams
+        bigrams = [p for p in unique_phrases if len(p.phrase.split()) == 2]
+        trigrams = [p for p in unique_phrases if len(p.phrase.split()) == 3]
+
         return WordAnalysis(
             most_frequent=most_frequent,
-            unique_words=unique_words[:50],  # Limit to top 50 for API response size
-            unique_phrases=unique_phrases
+            unique_words=unique_words[:50],  # Hapax legomena sample (words appearing once)
+            unique_phrases=unique_phrases,
+            unique_word_count=unique_word_count,
+            total_word_count=total_word_count,
+            vocabulary_richness=round(vocabulary_richness, 1),
+            top_words=most_frequent,  # Alias for backward compatibility
+            bigrams=bigrams,
+            trigrams=trigrams,
         )
 
     def _empty_analysis(self) -> WordAnalysis:
         """Return empty analysis for empty text"""
-        return WordAnalysis(
-            most_frequent=[],
-            unique_words=[],
-            unique_phrases=[]
-        )
+        return WordAnalysis(most_frequent=[], unique_words=[], unique_phrases=[])
 
     def _tokenize_words(self, text: str) -> list[str]:
         """Tokenize text into words, handling both NLTK and fallback methods"""
@@ -103,20 +155,22 @@ class WordAnalyzer:
                 pass
 
         # Fallback regex-based tokenization
-        words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+        words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
         return words
 
     def _get_stop_words(self) -> set[str]:
         """Get stop words, with fallback if NLTK is not available"""
         if nltk and stopwords:
             try:
-                return set(stopwords.words('english'))
+                return set(stopwords.words("english"))
             except Exception:
                 pass
 
         return self.fallback_stopwords
 
-    def _get_most_frequent_words(self, word_freq: Counter[str], limit: int = 20) -> list[WordFrequency]:
+    def _get_most_frequent_words(
+        self, word_freq: Counter[str], limit: int = 20
+    ) -> list[WordFrequency]:
         """Get most frequent words with their counts and relative sizes"""
         if not word_freq:
             return []
@@ -128,28 +182,36 @@ class WordAnalyzer:
             WordFrequency(
                 word=word,
                 count=count,
-                size=min(100, max(10, int((count / max_count) * 100)))  # Size 10-100 for visualization
+                size=min(
+                    100, max(10, int((count / max_count) * 100))
+                ),  # Size 10-100 for visualization
             )
             for word, count in most_common
         ]
 
-    def _extract_phrases(self, text: str, stop_words: set[str], limit: int = 15) -> list[PhraseCount]:
+    def _extract_phrases(
+        self, text: str, stop_words: set[str], limit: int = 15
+    ) -> list[PhraseCount]:
         """Extract meaningful phrases (n-grams) from text"""
         phrases: list[PhraseCount] = []
 
         # Extract bigrams (2-word phrases)
         bigrams = self._extract_ngrams(text, 2, stop_words)
-        phrases.extend([
-            PhraseCount(phrase=phrase, count=count)
-            for phrase, count in bigrams.most_common(limit // 2)
-        ])
+        phrases.extend(
+            [
+                PhraseCount(phrase=phrase, count=count)
+                for phrase, count in bigrams.most_common(limit // 2)
+            ]
+        )
 
         # Extract trigrams (3-word phrases)
         trigrams = self._extract_ngrams(text, 3, stop_words)
-        phrases.extend([
-            PhraseCount(phrase=phrase, count=count)
-            for phrase, count in trigrams.most_common(limit // 2)
-        ])
+        phrases.extend(
+            [
+                PhraseCount(phrase=phrase, count=count)
+                for phrase, count in trigrams.most_common(limit // 2)
+            ]
+        )
 
         # Sort by frequency and return top phrases
         phrases.sort(key=lambda x: x.count, reverse=True)
@@ -165,10 +227,10 @@ class WordAnalyzer:
                 phrase_list = list(ngrams(words, n))
             except Exception:
                 # Fallback to manual n-gram generation
-                phrase_list = [tuple(words[i:i+n]) for i in range(len(words) - n + 1)]
+                phrase_list = [tuple(words[i : i + n]) for i in range(len(words) - n + 1)]
         else:
             # Manual n-gram generation
-            phrase_list = [tuple(words[i:i+n]) for i in range(len(words) - n + 1)]
+            phrase_list = [tuple(words[i : i + n]) for i in range(len(words) - n + 1)]
 
         # Filter meaningful phrases
         meaningful_phrases = []
@@ -182,7 +244,7 @@ class WordAnalyzer:
                 continue
 
             # Join into string
-            phrase = ' '.join(phrase_tuple)
+            phrase = " ".join(phrase_tuple)
 
             # Skip phrases with repeated words
             if len(set(phrase_tuple)) < len(phrase_tuple):
@@ -214,12 +276,14 @@ class WordAnalyzer:
         avg_word_length = sum(len(word) for word in words) / len(words)
 
         # Lexical diversity (unique words per 100 words)
-        lexical_diversity = (unique_word_count / total_word_count) * 100 if total_word_count > 0 else 0
+        lexical_diversity = (
+            (unique_word_count / total_word_count) * 100 if total_word_count > 0 else 0
+        )
 
         return {
-            'unique_words': unique_word_count,
-            'total_words': total_word_count,
-            'type_token_ratio': round(ttr, 3),
-            'lexical_diversity': round(lexical_diversity, 1),
-            'average_word_length': round(avg_word_length, 1)
+            "unique_words": unique_word_count,
+            "total_words": total_word_count,
+            "type_token_ratio": round(ttr, 3),
+            "lexical_diversity": round(lexical_diversity, 1),
+            "average_word_length": round(avg_word_length, 1),
         }

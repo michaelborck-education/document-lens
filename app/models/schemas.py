@@ -86,8 +86,15 @@ class WritingQuality(BaseModel):
 
 class WordAnalysis(BaseModel):
     most_frequent: list[WordFrequency] = Field(default_factory=list)
-    unique_words: list[str] = Field(default_factory=list)
+    unique_words: list[str] = Field(default_factory=list)  # Hapax legomena (sample)
     unique_phrases: list[PhraseCount] = Field(default_factory=list)
+    # Vocabulary metrics
+    unique_word_count: int = 0  # Total distinct words
+    total_word_count: int = 0
+    vocabulary_richness: float = 0.0  # Type-token ratio as percentage
+    top_words: list[WordFrequency] = Field(default_factory=list)  # Alias for most_frequent
+    bigrams: list[PhraseCount] = Field(default_factory=list)
+    trigrams: list[PhraseCount] = Field(default_factory=list)
 
 
 class AnalysisResults(BaseModel):

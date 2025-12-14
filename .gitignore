@@ -107,6 +107,9 @@ Thumbs.db
 desktop.ini
 
 # Testing
+test-data/*.pdf
+test-data/*.docx
+test-data/*.pptx
 htmlcov/
 .tox/
 .nox/

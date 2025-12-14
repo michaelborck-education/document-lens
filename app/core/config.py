@@ -4,7 +4,7 @@ Configuration settings for DocumentLens API
 
 from typing import Any
 
-from pydantic import Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -57,9 +57,10 @@ class Settings(BaseSettings):
             return v
         return []
 
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
+    model_config = ConfigDict(
+        case_sensitive=True,
+        env_file=".env",
+    )
 
 
 # Create settings instance

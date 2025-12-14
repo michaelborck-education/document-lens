@@ -11,10 +11,10 @@ from fastapi import HTTPException
 
 # Import libraries for different file types
 try:
-    import PyPDF2
-    from PyPDF2 import PdfReader
+    import pypdf
+    from pypdf import PdfReader
 except ImportError:
-    PyPDF2 = None  # type: ignore[assignment]
+    pypdf = None  # type: ignore[assignment]
     PdfReader = None  # type: ignore[misc,assignment]
 
 try:
@@ -144,15 +144,15 @@ class DocumentProcessor:
 
     async def _extract_from_pdf_with_pages(self, content: bytes, filename: str) -> dict[str, Any]:
         """Extract text from PDF file with page-level granularity"""
-        if not PyPDF2:
-            raise ImportError("PyPDF2 not available. Please install with: pip install PyPDF2")
+        if not pypdf:
+            raise ImportError("pypdf not available. Please install with: pip install pypdf")
 
         pages: list[dict[str, Any]] = []
 
         try:
-            # Try with PyPDF2 first
+            # Try with pypdf first
             pdf_file = io.BytesIO(content)
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
+            pdf_reader = pypdf.PdfReader(pdf_file)
 
             for page_num, page in enumerate(pdf_reader.pages, start=1):
                 text = page.extract_text()
@@ -162,7 +162,7 @@ class DocumentProcessor:
                     # Keep empty pages to maintain page numbering
                     pages.append({"page_number": page_num, "text": ""})
 
-            # If PyPDF2 didn't extract much text, try pdfplumber
+            # If pypdf didn't extract much text, try pdfplumber
             total_text = "".join(p["text"] for p in pages)
             if len(total_text) < 100 and PDFPlumberPDF is not None:
                 pdf_file.seek(0)

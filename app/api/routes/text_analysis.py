@@ -24,9 +24,11 @@ writing_quality_analyzer = WritingQualityAnalyzer()
 word_analyzer = WordAnalyzer()
 ner_analyzer = NerAnalyzer()
 
+
 class TextAnalysisRequest(BaseModel):
     text: str
     options: dict = {}
+
 
 class TextAnalysisResponse(BaseModel):
     service: str = "DocumentLens"
@@ -35,11 +37,11 @@ class TextAnalysisResponse(BaseModel):
     analysis: dict
     processing_time: float
 
+
 @router.post("/text", response_model=TextAnalysisResponse)
 @limiter.limit(settings.RATE_LIMIT)
 async def analyse_text_only(
-    request: Request,
-    analysis_request: TextAnalysisRequest
+    request: Request, analysis_request: TextAnalysisRequest
 ) -> TextAnalysisResponse:
     """
     Core text analysis - readability, quality, and word metrics only.
@@ -54,10 +56,7 @@ async def analyse_text_only(
     start_time = time.time()
 
     if not analysis_request.text.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Text cannot be empty"
-        )
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
 
     try:
         text = analysis_request.text
@@ -76,37 +75,45 @@ async def analyse_text_only(
                     "word_count": document_analysis.word_count,
                     "sentence_count": document_analysis.sentence_count,
                     "paragraph_count": document_analysis.paragraph_count,
-                    "avg_words_per_sentence": document_analysis.avg_words_per_sentence
+                    "avg_words_per_sentence": document_analysis.avg_words_per_sentence,
                 },
                 "readability": {
                     "flesch_score": document_analysis.flesch_score,
                     "flesch_kincaid_grade": document_analysis.flesch_kincaid_grade,
-                    "interpretation": _interpret_readability(document_analysis.flesch_score)
+                    "interpretation": _interpret_readability(document_analysis.flesch_score),
                 },
                 "writing_quality": {
                     "passive_voice_percentage": writing_quality.passive_voice_percentage,
                     "sentence_variety": writing_quality.sentence_variety,
                     "academic_tone": writing_quality.academic_tone,
                     "transition_words": writing_quality.transition_words,
-                    "hedging_language": writing_quality.hedging_language
+                    "hedging_language": writing_quality.hedging_language,
                 },
                 "word_analysis": {
-                    "unique_words": word_analysis.unique_words if hasattr(word_analysis, 'unique_words') else 0,
-                    "vocabulary_richness": word_analysis.vocabulary_richness if hasattr(word_analysis, 'vocabulary_richness') else 0.0,
-                    "top_words": word_analysis.top_words if hasattr(word_analysis, 'top_words') else [],
-                    "bigrams": word_analysis.bigrams if hasattr(word_analysis, 'bigrams') else [],
-                    "trigrams": word_analysis.trigrams if hasattr(word_analysis, 'trigrams') else []
+                    "unique_words": word_analysis.unique_words
+                    if hasattr(word_analysis, "unique_words")
+                    else 0,
+                    "vocabulary_richness": word_analysis.vocabulary_richness
+                    if hasattr(word_analysis, "vocabulary_richness")
+                    else 0.0,
+                    "top_words": word_analysis.top_words
+                    if hasattr(word_analysis, "top_words")
+                    else [],
+                    "bigrams": word_analysis.bigrams if hasattr(word_analysis, "bigrams") else [],
+                    "trigrams": word_analysis.trigrams
+                    if hasattr(word_analysis, "trigrams")
+                    else [],
                 },
-                "ner": ner_results.dict() if hasattr(ner_results, 'dict') else ner_results.__dict__
+                "ner": ner_results.model_dump()
+                if hasattr(ner_results, "model_dump")
+                else ner_results.__dict__,
             },
-            processing_time=processing_time
+            processing_time=processing_time,
         )
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Text analysis failed: {e!s}"
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Text analysis failed: {e!s}") from e
+
 
 def _interpret_readability(flesch_score: float) -> str:
     """Interpret Flesch Reading Ease score"""

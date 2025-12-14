@@ -154,8 +154,8 @@ class TestFileUploadEndpoint:
     @pytest.mark.slow
     def test_upload_multiple_pdfs(self, client: TestClient, sample_pdf_paths: list[Path]):
         """Uploading multiple PDFs should process all files (within size limits)."""
-        # Filter to only PDFs under 10MB (the default MAX_FILE_SIZE)
-        max_size = 10 * 1024 * 1024  # 10MB
+        # Filter to only PDFs under 50MB (the default MAX_FILE_SIZE)
+        max_size = 50 * 1024 * 1024  # 50MB
         small_pdfs = [p for p in sample_pdf_paths if p.stat().st_size < max_size]
 
         if len(small_pdfs) < 2:

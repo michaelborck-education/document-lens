@@ -101,6 +101,38 @@ cd document-lens
 ./deploy.sh  # Handles venv, dependencies, and production server
 ```
 
+## 🧪 Testing
+
+```bash
+# Install dev dependencies
+uv sync --extra dev
+
+# Run all tests
+uv run pytest tests/ -v
+
+# Run specific test file
+uv run pytest tests/test_files.py -v
+
+# Run only PDF tests
+uv run pytest tests/ -m pdf -v
+
+# Skip slow tests
+uv run pytest tests/ -m "not slow" -v
+
+# Run with coverage report
+uv run pytest tests/
+```
+
+### Test Structure
+- `tests/conftest.py` - Shared fixtures and test client setup
+- `tests/test_health.py` - Health/smoke tests
+- `tests/test_text_analysis.py` - Text analysis endpoint tests
+- `tests/test_academic_analysis.py` - Academic analysis endpoint tests
+- `tests/test_files.py` - PDF file upload tests
+
+### Test Data
+Place test files (PDF, DOCX, etc.) in the `test-data/` directory. The test suite automatically discovers and uses these files for parameterized tests.
+
 ## 📚 Documentation
 
 - `DEPLOYMENT.md` - Deployment guide for Docker and raw installations

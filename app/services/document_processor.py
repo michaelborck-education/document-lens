@@ -32,7 +32,6 @@ try:
 except ImportError:
     Presentation = None
 
-
 class DocumentProcessor:
     """Handles text extraction from various document formats"""
 

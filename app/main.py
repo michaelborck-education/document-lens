@@ -16,6 +16,7 @@ from app.api.routes import (
     advanced_text,
     future_endpoints,
     health,
+    semantic_analysis,
     text_analysis,
 )
 from app.core.config import settings
@@ -51,6 +52,7 @@ app.include_router(text_analysis.router, tags=["text-analysis"])
 app.include_router(academic_analysis.router, tags=["academic-analysis"])
 app.include_router(future_endpoints.router, tags=["file-processing"])
 app.include_router(advanced_text.router, tags=["advanced-text"])
+app.include_router(semantic_analysis.router, prefix="/semantic", tags=["semantic-analysis"])
 
 
 @app.get("/")
@@ -68,12 +70,14 @@ async def root() -> dict[str, Any]:
                 "academic_analysis": "/academic",
                 "file_processing": "/files",
                 "advanced_text": "/advanced",
+                "semantic_analysis": "/semantic",
             },
             "description": {
                 "text_analysis": "Analyse raw text (JSON input)",
                 "academic_analysis": "Academic analysis of raw text (JSON input)",
                 "file_processing": "Upload and analyse files (form data)",
                 "advanced_text": "N-grams, NER, and keyword search",
+                "semantic_analysis": "Domain mapping, structural mismatch, sentiment analysis",
             },
         },
     }

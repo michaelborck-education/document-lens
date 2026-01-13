@@ -219,3 +219,100 @@ class ErrorResponse(BaseModel):
     error: str
     details: str | None = None
     code: int | None = None
+
+
+# ===== Domain Mapping Models =====
+class DomainMapping(BaseModel):
+    """Mapping of a section/segment to a domain"""
+
+    section_text: str
+    section_index: int
+    primary_domain: str
+    similarity_score: float  # 0.0-1.0
+    all_domain_scores: dict[str, float] = Field(default_factory=dict)
+    confidence: Literal["high", "medium", "low"]
+
+
+class DomainMappingResponse(BaseModel):
+    """Response for domain mapping analysis"""
+
+    total_sections: int
+    domains_analyzed: list[str] = Field(default_factory=list)
+    mappings: list[DomainMapping] = Field(default_factory=list)
+    domain_distribution: dict[str, int] = Field(default_factory=dict)  # domain -> count
+    average_confidence: float = 0.0
+
+
+# ===== Structural Mismatch Models =====
+class SentenceDislocation(BaseModel):
+    """A sentence that's thematically dislocated from its parent section"""
+
+    sentence_index: int
+    sentence_text: str
+    sentence_domain: str
+    parent_section_index: int
+    parent_section_domain: str
+    dislocation_score: float  # 0.0-1.0, higher = more dislocated
+    severity: Literal["low", "medium", "high"]
+
+
+class StructuralMismatchResponse(BaseModel):
+    """Response for structural mismatch detection"""
+
+    total_sentences_analyzed: int
+    total_sections: int
+    dislocations: list[SentenceDislocation] = Field(default_factory=list)
+    overall_coherence_score: float = 0.0  # 0.0-1.0, higher = more coherent
+    highly_dislocated_count: int = 0
+    recommendations: list[str] = Field(default_factory=list)
+
+
+# ===== Granular Sentiment Models =====
+class SentimentScore(BaseModel):
+    """Sentiment scores (0.0-1.0 for each)"""
+
+    positive: float = 0.0
+    negative: float = 0.0
+    neutral: float = 0.0
+    compound: float = 0.0  # -1.0 to 1.0
+
+
+class SentenceSentiment(BaseModel):
+    """Sentiment for a single sentence"""
+
+    sentence_index: int
+    text: str
+    sentiment: SentimentScore
+    dominant_sentiment: Literal["positive", "negative", "neutral"]
+
+
+class ParagraphSentiment(BaseModel):
+    """Sentiment for a paragraph (aggregated from sentences)"""
+
+    paragraph_index: int
+    sentence_count: int
+    sentiment: SentimentScore  # Averaged from sentences
+    sentences: list[SentenceSentiment] = Field(default_factory=list)
+    dominant_sentiment: Literal["positive", "negative", "neutral"]
+
+
+class SectionSentiment(BaseModel):
+    """Sentiment for a document section"""
+
+    section_name: str
+    section_index: int
+    paragraph_count: int
+    sentiment: SentimentScore  # Aggregated
+    paragraphs: list[ParagraphSentiment] = Field(default_factory=list)
+    dominant_sentiment: Literal["positive", "negative", "neutral"]
+
+
+class GranularSentimentResponse(BaseModel):
+    """Multi-level sentiment analysis response"""
+
+    document_sentiment: SentimentScore  # Overall document
+    sections: list[SectionSentiment] = Field(default_factory=list)
+    total_sentences: int = 0
+    total_paragraphs: int = 0
+    total_sections: int = 0
+    sentiment_distribution: dict[str, float] = Field(default_factory=dict)  # positive/negative/neutral percentages

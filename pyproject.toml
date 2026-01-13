@@ -28,6 +28,10 @@ dependencies = [
     "spacy>=3.7.2",
     "pycryptodome>=3.23.0",
     "pypdf>=6.4.2",
+    "sentence-transformers>=2.3.0",
+    "transformers>=4.35.0",
+    "torch>=2.1.0",
+    "numpy>=1.24.0",
 ]
 
 [project.optional-dependencies]
@@ -108,6 +112,9 @@ module = [
     "nltk.*",
     "sklearn.*",
     "spacy.*",
+    "sentence_transformers.*",
+    "transformers.*",
+    "torch.*",
 ]
 ignore_missing_imports = true
 

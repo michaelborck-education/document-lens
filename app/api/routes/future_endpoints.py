@@ -707,3 +707,207 @@ def _detect_content_type_from_bytes(
         return provided_type
 
     return "application/octet-stream"
+
+
+# =============================================================================
+# File Path Upload Endpoint
+# =============================================================================
+# For local deployments where frontend and backend share a filesystem.
+# Much more efficient than base64 or multipart - backend reads file directly.
+
+
+class FilePathUpload(BaseModel):
+    """Request model for file path upload."""
+
+    file_path: str = Field(..., description="Absolute path to the file on disk")
+
+
+class FilePathUploadRequest(BaseModel):
+    """Request model for uploading files via file paths."""
+
+    files: list[FilePathUpload] = Field(..., description="List of file paths to process")
+    include_extracted_text: bool = Field(False, description="Include full extracted text")
+    analysis_type: str = Field("full", description="Analysis type: full, text, or academic")
+
+
+@router.post("/files/upload-path", response_model=FileAnalysisResponse)
+@limiter.limit(settings.RATE_LIMIT)
+async def upload_files_by_path(
+    request: Request,
+    payload: FilePathUploadRequest = Body(...),
+) -> FileAnalysisResponse:
+    """
+    Upload and analyze files by providing their filesystem paths.
+
+    This is the most efficient method for local deployments where the frontend
+    and backend share a filesystem. The backend reads files directly from disk.
+
+    **Security:** This endpoint only accepts connections from localhost (127.0.0.1).
+    Remote connections are rejected.
+
+    Example:
+    ```json
+    {
+        "files": [{"file_path": "/Users/me/Documents/report.pdf"}],
+        "include_extracted_text": true,
+        "analysis_type": "full"
+    }
+    ```
+    """
+    import os
+
+    # Security: Only allow from localhost to prevent arbitrary file reads
+    client_host = request.client.host if request.client else None
+    if client_host not in ("127.0.0.1", "::1", "localhost"):
+        raise HTTPException(
+            status_code=403,
+            detail="This endpoint is only available for local connections",
+        )
+
+    start_time = time.time()
+
+    if not payload.files:
+        raise HTTPException(status_code=400, detail="No files provided")
+
+    if len(payload.files) > settings.MAX_FILES_PER_REQUEST:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Too many files. Maximum {settings.MAX_FILES_PER_REQUEST} allowed.",
+        )
+
+    if payload.analysis_type not in ["full", "text", "academic"]:
+        raise HTTPException(
+            status_code=400, detail="analysis_type must be 'full', 'text', or 'academic'"
+        )
+
+    try:
+        file_results = []
+        all_texts = []
+        all_metadata = []
+
+        for file_data in payload.files:
+            file_path = file_data.file_path
+
+            # Validate file exists
+            if not os.path.isfile(file_path):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File not found: {file_path}",
+                )
+
+            # Read file from disk
+            try:
+                with open(file_path, "rb") as f:
+                    content = f.read()
+            except PermissionError:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Permission denied reading: {file_path}",
+                )
+            except Exception as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Error reading file {file_path}: {e!s}",
+                )
+
+            filename = os.path.basename(file_path)
+
+            # Check file size
+            if len(content) > settings.MAX_FILE_SIZE:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File {filename} too large. Max: {settings.MAX_FILE_SIZE} bytes",
+                )
+
+            # Detect content type
+            detected_content_type = _detect_content_type_from_bytes(content, filename, None)
+
+            # Validate file type
+            if detected_content_type not in settings.SUPPORTED_FILE_TYPES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {detected_content_type} (filename: {filename})",
+                )
+
+            # Extract text
+            extracted_text_data = None
+            if payload.include_extracted_text:
+                extracted_text_data = await document_processor.extract_text_with_pages(
+                    content,
+                    detected_content_type,
+                    filename,
+                )
+                text = extracted_text_data["full_text"]
+            else:
+                text = await document_processor.extract_text(
+                    content,
+                    detected_content_type,
+                    filename,
+                )
+
+            # Extract metadata
+            metadata = await document_processor.extract_metadata(
+                content,
+                detected_content_type,
+                filename,
+            )
+
+            file_metadata = FileMetadata(
+                filename=filename,
+                size=len(content),
+                content_type=detected_content_type,
+                pages=metadata.get("pages"),
+                author=metadata.get("author"),
+                title=metadata.get("title"),
+                creation_date=metadata.get("creation_date"),
+                modification_date=metadata.get("modification_date"),
+            )
+            all_metadata.append(file_metadata)
+
+            # Analyze
+            file_analysis = await _analyse_file_content(
+                text, payload.analysis_type, "auto", True, True
+            )
+
+            # Build result
+            file_result: dict[str, Any] = {
+                "filename": filename,
+                "content_type": detected_content_type,
+                "size": len(content),
+                "text_length": len(text),
+                "metadata": file_metadata.model_dump(),
+                "analysis": file_analysis,
+            }
+
+            if payload.include_extracted_text and extracted_text_data:
+                file_result["extracted_text"] = {
+                    "full_text": extracted_text_data["full_text"],
+                    "pages": extracted_text_data["pages"],
+                    "total_pages": extracted_text_data["total_pages"],
+                }
+
+            file_results.append(file_result)
+            all_texts.append(text)
+
+        processing_time = time.time() - start_time
+
+        return FileAnalysisResponse(
+            files_processed=len(file_results),
+            analysis_type=payload.analysis_type,
+            processing_time=processing_time,
+            results={
+                "individual_files": file_results,
+                "cross_analysis": {},
+                "summary": {
+                    "total_files": len(file_results),
+                    "total_text_length": sum(len(t) for t in all_texts),
+                    "supported_formats": list(settings.SUPPORTED_FILE_TYPES),
+                    "metadata_extracted": True,
+                },
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File analysis failed: {e!s}") from e

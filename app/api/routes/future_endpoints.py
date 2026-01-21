@@ -24,6 +24,68 @@ from app.services.url_verifier import URLVerifier
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
+# File type detection constants
+# Magic bytes signatures for supported file types
+MAGIC_BYTES = {
+    b"%PDF": "application/pdf",
+    b"PK\x03\x04": "application/vnd.openxmlformats-officedocument",  # ZIP-based (DOCX, PPTX)
+}
+
+# Extension to MIME type mapping
+EXTENSION_MIME_MAP = {
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".txt": "text/plain",
+    ".md": "text/markdown",
+    ".json": "application/json",
+}
+
+
+async def detect_content_type(file: UploadFile, content: bytes) -> str:
+    """
+    Detect the actual content type of an uploaded file.
+
+    Uses multiple detection methods in order of reliability:
+    1. Magic bytes (file signature) - most reliable
+    2. File extension
+    3. Content-Type header from upload
+
+    Args:
+        file: The uploaded file object
+        content: The file content as bytes
+
+    Returns:
+        The detected MIME type string
+    """
+    # Method 1: Check magic bytes (most reliable)
+    for magic, mime_type in MAGIC_BYTES.items():
+        if content.startswith(magic):
+            # For ZIP-based formats, need to check filename extension
+            if mime_type == "application/vnd.openxmlformats-officedocument":
+                filename = file.filename or ""
+                if filename.lower().endswith(".docx"):
+                    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                elif filename.lower().endswith(".pptx"):
+                    return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                # Default to docx for unknown zip-based office files
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            return mime_type
+
+    # Method 2: Check file extension
+    filename = file.filename or ""
+    for ext, mime_type in EXTENSION_MIME_MAP.items():
+        if filename.lower().endswith(ext):
+            return mime_type
+
+    # Method 3: Fall back to Content-Type header
+    if file.content_type and file.content_type != "application/octet-stream":
+        return file.content_type
+
+    # Default fallback
+    return "application/octet-stream"
+
+
 # Initialize services
 document_processor = DocumentProcessor()
 reference_extractor = ReferenceExtractor()
@@ -131,13 +193,7 @@ async def analyse_uploaded_files(
         all_metadata = []
 
         for file in files:
-            # Validate file type
-            if file.content_type not in settings.SUPPORTED_FILE_TYPES:
-                raise HTTPException(
-                    status_code=400, detail=f"Unsupported file type: {file.content_type}"
-                )
-
-            # Read file content
+            # Read file content first (needed for content type detection)
             content = await file.read()
 
             # Check file size
@@ -147,13 +203,23 @@ async def analyse_uploaded_files(
                     detail=f"File {file.filename} too large. Max: {settings.MAX_FILE_SIZE} bytes",
                 )
 
+            # Detect actual content type (magic bytes > extension > header)
+            detected_content_type = await detect_content_type(file, content)
+
+            # Validate file type using detected type
+            if detected_content_type not in settings.SUPPORTED_FILE_TYPES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {detected_content_type} (filename: {file.filename})",
+                )
+
             # Extract text (with or without page-level structure)
             extracted_text_data = None
             if include_extracted_text:
                 # Use page-level extraction
                 extracted_text_data = await document_processor.extract_text_with_pages(
                     content,
-                    file.content_type or "application/octet-stream",
+                    detected_content_type,
                     file.filename or "unknown",
                 )
                 text = extracted_text_data["full_text"]
@@ -161,7 +227,7 @@ async def analyse_uploaded_files(
                 # Standard extraction (just the text)
                 text = await document_processor.extract_text(
                     content,
-                    file.content_type or "application/octet-stream",
+                    detected_content_type,
                     file.filename or "unknown",
                 )
 
@@ -171,14 +237,14 @@ async def analyse_uploaded_files(
             if extract_metadata:
                 metadata = await document_processor.extract_metadata(
                     content,
-                    file.content_type or "application/octet-stream",
+                    detected_content_type,
                     file.filename or "unknown",
                 )
 
                 file_metadata = FileMetadata(
                     filename=file.filename or "unknown",
                     size=len(content),
-                    content_type=file.content_type or "application/octet-stream",
+                    content_type=detected_content_type,
                     pages=metadata.get("pages"),
                     author=metadata.get("author"),
                     title=metadata.get("title"),
@@ -195,6 +261,8 @@ async def analyse_uploaded_files(
             # Build result for this file
             file_result: dict[str, Any] = {
                 "filename": file.filename,
+                "content_type": detected_content_type,
+                "size": len(content),
                 "text_length": len(text),
                 "metadata": file_metadata.model_dump() if file_metadata else None,
                 "analysis": file_analysis,
@@ -355,11 +423,7 @@ async def infer_document_metadata(
     Returns:
         InferredMetadata with probable values and confidence scores
     """
-    # Validate file type
-    if file.content_type not in settings.SUPPORTED_FILE_TYPES:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.content_type}")
-
-    # Read file content
+    # Read file content first (needed for content type detection)
     content = await file.read()
 
     # Check file size
@@ -369,11 +433,21 @@ async def infer_document_metadata(
             detail=f"File too large. Maximum: {settings.MAX_FILE_SIZE} bytes",
         )
 
+    # Detect actual content type
+    detected_content_type = await detect_content_type(file, content)
+
+    # Validate file type
+    if detected_content_type not in settings.SUPPORTED_FILE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {detected_content_type} (filename: {file.filename})",
+        )
+
     try:
         # Extract text from document
         text = await document_processor.extract_text(
             content,
-            file.content_type or "application/octet-stream",
+            detected_content_type,
             file.filename or "unknown",
         )
 

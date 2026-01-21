@@ -2,11 +2,12 @@
 File processing endpoints - Enhanced document upload and analysis
 """
 
+import base64
 import time
 from typing import Any
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-from pydantic import BaseModel
+from fastapi import APIRouter, Body, File, Form, HTTPException, Request, UploadFile
+from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -495,3 +496,214 @@ async def infer_text_metadata(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Metadata inference failed: {e!s}") from e
+
+
+# =============================================================================
+# Base64 File Upload Endpoint
+# =============================================================================
+# This endpoint accepts files as base64-encoded JSON, avoiding multipart form
+# parsing issues that occur in PyInstaller bundles.
+
+
+class Base64FileUpload(BaseModel):
+    """Request model for base64-encoded file upload."""
+
+    filename: str = Field(..., description="Original filename with extension")
+    content_base64: str = Field(..., description="Base64-encoded file content")
+    content_type: str | None = Field(None, description="MIME type (optional, will be detected)")
+
+
+class Base64UploadRequest(BaseModel):
+    """Request model for uploading files via base64 encoding."""
+
+    files: list[Base64FileUpload] = Field(..., description="List of files to process")
+    include_extracted_text: bool = Field(False, description="Include full extracted text in response")
+    analysis_type: str = Field("full", description="Analysis type: full, text, or academic")
+
+
+@router.post("/files/upload-base64", response_model=FileAnalysisResponse)
+@limiter.limit(settings.RATE_LIMIT)
+async def upload_files_base64(
+    request: Request,
+    payload: Base64UploadRequest = Body(...),
+) -> FileAnalysisResponse:
+    """
+    Upload and analyze files using base64 encoding.
+
+    This endpoint is an alternative to the multipart form upload that avoids
+    issues with multipart parsing in certain environments (e.g., PyInstaller bundles).
+
+    The file content should be base64-encoded. Example:
+    ```json
+    {
+        "files": [{
+            "filename": "report.pdf",
+            "content_base64": "JVBERi0xLjQK...",
+            "content_type": "application/pdf"
+        }],
+        "include_extracted_text": true,
+        "analysis_type": "full"
+    }
+    ```
+
+    Returns the same response format as /files endpoint.
+    """
+    start_time = time.time()
+
+    if not payload.files:
+        raise HTTPException(status_code=400, detail="No files provided")
+
+    if len(payload.files) > settings.MAX_FILES_PER_REQUEST:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Too many files. Maximum {settings.MAX_FILES_PER_REQUEST} allowed.",
+        )
+
+    if payload.analysis_type not in ["full", "text", "academic"]:
+        raise HTTPException(
+            status_code=400, detail="analysis_type must be 'full', 'text', or 'academic'"
+        )
+
+    try:
+        file_results = []
+        all_texts = []
+        all_metadata = []
+
+        for file_data in payload.files:
+            # Decode base64 content
+            try:
+                content = base64.b64decode(file_data.content_base64)
+            except Exception as e:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid base64 content for {file_data.filename}: {e!s}",
+                ) from e
+
+            # Check file size
+            if len(content) > settings.MAX_FILE_SIZE:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"File {file_data.filename} too large. Max: {settings.MAX_FILE_SIZE} bytes",
+                )
+
+            # Detect content type from magic bytes and extension
+            detected_content_type = _detect_content_type_from_bytes(
+                content, file_data.filename, file_data.content_type
+            )
+
+            # Validate file type
+            if detected_content_type not in settings.SUPPORTED_FILE_TYPES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported file type: {detected_content_type} (filename: {file_data.filename})",
+                )
+
+            # Extract text
+            extracted_text_data = None
+            if payload.include_extracted_text:
+                extracted_text_data = await document_processor.extract_text_with_pages(
+                    content,
+                    detected_content_type,
+                    file_data.filename,
+                )
+                text = extracted_text_data["full_text"]
+            else:
+                text = await document_processor.extract_text(
+                    content,
+                    detected_content_type,
+                    file_data.filename,
+                )
+
+            # Extract metadata
+            metadata = await document_processor.extract_metadata(
+                content,
+                detected_content_type,
+                file_data.filename,
+            )
+
+            file_metadata = FileMetadata(
+                filename=file_data.filename,
+                size=len(content),
+                content_type=detected_content_type,
+                pages=metadata.get("pages"),
+                author=metadata.get("author"),
+                title=metadata.get("title"),
+                creation_date=metadata.get("creation_date"),
+                modification_date=metadata.get("modification_date"),
+            )
+            all_metadata.append(file_metadata)
+
+            # Analyze
+            file_analysis = await _analyse_file_content(
+                text, payload.analysis_type, "auto", True, True
+            )
+
+            # Build result
+            file_result: dict[str, Any] = {
+                "filename": file_data.filename,
+                "content_type": detected_content_type,
+                "size": len(content),
+                "text_length": len(text),
+                "metadata": file_metadata.model_dump(),
+                "analysis": file_analysis,
+            }
+
+            if payload.include_extracted_text and extracted_text_data:
+                file_result["extracted_text"] = {
+                    "full_text": extracted_text_data["full_text"],
+                    "pages": extracted_text_data["pages"],
+                    "total_pages": extracted_text_data["total_pages"],
+                }
+
+            file_results.append(file_result)
+            all_texts.append(text)
+
+        processing_time = time.time() - start_time
+
+        return FileAnalysisResponse(
+            files_processed=len(file_results),
+            analysis_type=payload.analysis_type,
+            processing_time=processing_time,
+            results={
+                "individual_files": file_results,
+                "cross_analysis": {},
+                "summary": {
+                    "total_files": len(file_results),
+                    "total_text_length": sum(len(t) for t in all_texts),
+                    "supported_formats": list(settings.SUPPORTED_FILE_TYPES),
+                    "metadata_extracted": True,
+                },
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File analysis failed: {e!s}") from e
+
+
+def _detect_content_type_from_bytes(
+    content: bytes, filename: str, provided_type: str | None
+) -> str:
+    """Detect content type from bytes, filename, or provided type."""
+    # Check magic bytes
+    for magic, mime_type in MAGIC_BYTES.items():
+        if content.startswith(magic):
+            if mime_type == "application/vnd.openxmlformats-officedocument":
+                if filename.lower().endswith(".docx"):
+                    return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                elif filename.lower().endswith(".pptx"):
+                    return "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            return mime_type
+
+    # Check extension
+    for ext, mime_type in EXTENSION_MIME_MAP.items():
+        if filename.lower().endswith(ext):
+            return mime_type
+
+    # Use provided type if valid
+    if provided_type and provided_type != "application/octet-stream":
+        return provided_type
+
+    return "application/octet-stream"
